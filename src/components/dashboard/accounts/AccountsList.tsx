@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import type { Account } from "@/types";
-import { collection, query, where, onSnapshot, orderBy, writeBatch, getDocs, doc, deleteDoc, type Firestore, type Query } from "firebase/firestore";
+import { collection, query, where, onSnapshot, writeBatch, getDocs, doc, deleteDoc, type Firestore, type Query } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -34,8 +34,7 @@ export function AccountsList() {
 
     const q = query(
       collection(db, "accounts"),
-      where("userId", "==", user.uid),
-      orderBy("createdAt", "desc")
+      where("userId", "==", user.uid)
     );
 
     const unsubscribe = onSnapshot(
@@ -45,6 +44,8 @@ export function AccountsList() {
         querySnapshot.forEach((doc) => {
           accountsData.push({ id: doc.id, ...doc.data() } as Account);
         });
+        // Sort on the client to avoid needing a composite index
+        accountsData.sort((a, b) => b.createdAt.seconds - a.createdAt.seconds);
         setAccounts(accountsData);
         setLoading(false);
       },

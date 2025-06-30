@@ -1,8 +1,28 @@
+"use client";
+
 import { AccountsList } from "@/components/dashboard/accounts/AccountsList";
 import { AddAccountDialog } from "@/components/dashboard/accounts/AddAccountDialog";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ImportBalancesDialog } from "@/components/dashboard/accounts/ImportBalancesDialog";
+import dynamic from "next/dynamic";
+import { Button } from "@/components/ui/button";
+import { Upload } from "lucide-react";
+
+const ImportBalancesDialog = dynamic(
+  () =>
+    import("@/components/dashboard/accounts/ImportBalancesDialog").then(
+      (mod) => mod.ImportBalancesDialog
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <Button variant="outline" disabled>
+        <Upload className="mr-2 h-4 w-4" />
+        Importa Saldi
+      </Button>
+    ),
+  }
+);
 
 export default function AccountsPage() {
   return (
@@ -15,8 +35,8 @@ export default function AccountsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-            <ImportBalancesDialog />
-            <AddAccountDialog />
+          <ImportBalancesDialog />
+          <AddAccountDialog />
         </div>
       </div>
       <Suspense fallback={<Skeleton className="h-96 w-full" />}>

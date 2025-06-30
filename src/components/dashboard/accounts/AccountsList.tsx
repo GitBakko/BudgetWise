@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState, Fragment } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import type { Account } from "@/types";
 import { collection, query, where, onSnapshot, writeBatch, getDocs, doc, deleteDoc, type Firestore, type Query } from "firebase/firestore";
@@ -8,7 +8,7 @@ import { db } from "@/lib/firebase";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Landmark, MoreHorizontal, Edit, BookUp, Trash2 } from "lucide-react";
+import { Landmark, MoreHorizontal, Edit, BookUp, Trash2, TrendingUp } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
@@ -16,6 +16,7 @@ import { EditAccountDialog } from "./EditAccountDialog";
 import { SetBalanceDialog } from "./SetBalanceDialog";
 import { DeleteAccountDialog } from "./DeleteAccountDialog";
 import { useToast } from "@/hooks/use-toast";
+import { AccountTrendChart } from "./AccountTrendChart";
 
 export function AccountsList() {
   const { user } = useAuth();
@@ -25,6 +26,11 @@ export function AccountsList() {
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [settingBalanceAccount, setSettingBalanceAccount] = useState<Account | null>(null);
   const [deletingAccount, setDeletingAccount] = useState<Account | null>(null);
+  const [expandedAccountId, setExpandedAccountId] = useState<string | null>(null);
+
+  const handleToggleExpand = (accountId: string) => {
+    setExpandedAccountId(prevId => (prevId === accountId ? null : accountId));
+  };
 
   useEffect(() => {
     if (!user) {
@@ -44,7 +50,6 @@ export function AccountsList() {
         querySnapshot.forEach((doc) => {
           accountsData.push({ id: doc.id, ...doc.data() } as Account);
         });
-        // Sort on the client to avoid needing a composite index
         accountsData.sort((a, b) => b.createdAt.seconds - a.createdAt.seconds);
         setAccounts(accountsData);
         setLoading(false);
@@ -119,7 +124,7 @@ export function AccountsList() {
         <CardHeader>
           <CardTitle>Lista Conti</CardTitle>
           <CardDescription>
-            Elenco di tutti i tuoi conti registrati.
+            Elenco di tutti i tuoi conti registrati. Clicca sul grafico per vederne l'andamento.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -130,55 +135,71 @@ export function AccountsList() {
                   <TableHead>Nome Conto</TableHead>
                   <TableHead>Data Creazione</TableHead>
                   <TableHead className="text-right">Saldo Iniziale</TableHead>
+                  <TableHead className="w-[50px] text-center">Grafico</TableHead>
                   <TableHead className="w-[50px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {accounts.map((account) => (
-                  <TableRow key={account.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar className="rounded-lg">
-                          <AvatarImage src={account.iconUrl || undefined} alt={account.name} />
-                          <AvatarFallback className="rounded-lg">
-                              <Landmark className="h-5 w-5 text-muted-foreground" />
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="font-medium">{account.name}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {new Date(account.createdAt.seconds * 1000).toLocaleDateString("it-IT")}
-                    </TableCell>
-                    <TableCell className="text-right font-semibold">
-                      €{account.initialBalance.toFixed(2)}
-                    </TableCell>
-                    <TableCell>
-                       <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0">
-                                  <span className="sr-only">Apri menu</span>
-                                  <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                              <DropdownMenuItem onSelect={() => setEditingAccount(account)}>
-                                <Edit className="mr-2 h-4 w-4"/>
-                                <span>Modifica Conto</span>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onSelect={() => setSettingBalanceAccount(account)}>
-                                <BookUp className="mr-2 h-4 w-4" />
-                                <span>Imposta Saldo a Data</span>
-                              </DropdownMenuItem>
-                               <DropdownMenuSeparator />
-                              <DropdownMenuItem onSelect={() => setDeletingAccount(account)} className="text-destructive focus:text-destructive-foreground focus:bg-destructive/90">
-                                <Trash2 className="mr-2 h-4 w-4"/>
-                                <span>Elimina Conto</span>
-                              </DropdownMenuItem>
-                          </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
+                  <Fragment key={account.id}>
+                    <TableRow>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar className="rounded-lg h-10 w-10">
+                            <AvatarImage src={account.iconUrl || undefined} alt={account.name} className="object-cover"/>
+                            <AvatarFallback className="rounded-lg bg-muted">
+                                <Landmark className="h-5 w-5 text-muted-foreground" />
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="font-medium">{account.name}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {new Date(account.createdAt.seconds * 1000).toLocaleDateString("it-IT")}
+                      </TableCell>
+                      <TableCell className="text-right font-semibold">
+                        €{account.initialBalance.toFixed(2)}
+                      </TableCell>
+                      <TableCell className="text-center">
+                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleToggleExpand(account.id)}>
+                            <TrendingUp className="h-4 w-4"/>
+                            <span className="sr-only">Mostra/Nascondi grafico</span>
+                        </Button>
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                    <span className="sr-only">Apri menu</span>
+                                    <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem onSelect={() => setEditingAccount(account)}>
+                                  <Edit className="mr-2 h-4 w-4"/>
+                                  <span>Modifica Conto</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => setSettingBalanceAccount(account)}>
+                                  <BookUp className="mr-2 h-4 w-4" />
+                                  <span>Imposta Saldo a Data</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onSelect={() => setDeletingAccount(account)} className="text-destructive focus:text-destructive-foreground focus:bg-destructive/90">
+                                  <Trash2 className="mr-2 h-4 w-4"/>
+                                  <span>Elimina Conto</span>
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                     {expandedAccountId === account.id && (
+                        <TableRow className="bg-muted/5 hover:bg-muted/5">
+                            <TableCell colSpan={5} className="p-2 md:p-4">
+                                <AccountTrendChart account={account} />
+                            </TableCell>
+                        </TableRow>
+                    )}
+                  </Fragment>
                 ))}
               </TableBody>
             </Table>

@@ -7,6 +7,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Upload } from "lucide-react";
+import { TotalBalanceCard } from "@/components/dashboard/accounts/TotalBalanceCard";
+import { BalanceChart } from "@/components/dashboard/charts/BalanceChart";
 
 const ImportBalancesDialog = dynamic(
   () =>
@@ -31,7 +33,7 @@ export default function AccountsPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">I Tuoi Conti</h1>
           <p className="text-muted-foreground">
-            Gestisci i tuoi conti correnti e di risparmio.
+            Gestisci i tuoi conti, visualizza l'andamento e importa i dati.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -39,6 +41,20 @@ export default function AccountsPage() {
           <AddAccountDialog />
         </div>
       </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-1">
+            <Suspense fallback={<Skeleton className="h-32 w-full" />}>
+                <TotalBalanceCard />
+            </Suspense>
+        </div>
+        <div className="lg:col-span-2">
+             <Suspense fallback={<Skeleton className="h-80 w-full" />}>
+                <BalanceChart />
+             </Suspense>
+        </div>
+      </div>
+
       <Suspense fallback={<Skeleton className="h-96 w-full" />}>
         <AccountsList />
       </Suspense>

@@ -13,11 +13,14 @@ import {
 import { db } from "@/lib/firebase";
 
 type AccountInfo = {
+    id: string;
     name: string;
     color?: string;
 }
 
 type CategoryInfo = {
+    id: string;
+    name: string;
     color?: string;
     icon: string;
 }
@@ -25,13 +28,14 @@ type CategoryInfo = {
 export function useTransactionsTable() {
   const { user } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [accounts, setAccounts] = useState<Map<string, AccountInfo>>(new Map());
-  const [categories, setCategories] = useState<Map<string, CategoryInfo>>(new Map());
+  const [accounts, setAccounts] = useState<AccountInfo[]>([]);
+  const [categories, setCategories] = useState<CategoryInfo[]>([]);
   const [loading, setLoading] = useState(true);
+  
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterType, setFilterType] = useState<"all" | "income" | "expense">(
-    "all"
-  );
+  const [filterType, setFilterType] = useState<"all" | "income" | "expense">("all");
+  const [filterAccount, setFilterAccount] = useState<string>("all");
+  const [filterCategory, setFilterCategory] = useState<string>("all");
   
   useEffect(() => {
     if (!user) {
@@ -72,12 +76,12 @@ export function useTransactionsTable() {
       where("userId", "==", user.uid)
     );
     unsubs.push(onSnapshot(accQuery, (snapshot) => {
-      const accsMap = new Map<string, AccountInfo>();
+      const accs: AccountInfo[] = [];
       snapshot.forEach((doc) => {
         const account = doc.data() as Omit<Account, 'id'>;
-        accsMap.set(doc.id, {name: account.name, color: account.color});
+        accs.push({id: doc.id, name: account.name, color: account.color});
       });
-      setAccounts(accsMap);
+      setAccounts(accs.sort((a,b) => a.name.localeCompare(b.name)));
     }));
     
     const catQuery = query(
@@ -85,12 +89,12 @@ export function useTransactionsTable() {
       where("userId", "==", user.uid)
     );
     unsubs.push(onSnapshot(catQuery, (snapshot) => {
-        const catsMap = new Map<string, CategoryInfo>();
+        const cats: CategoryInfo[] = [];
         snapshot.forEach((doc) => {
             const category = doc.data() as Category;
-            catsMap.set(category.name, { color: category.color, icon: category.icon });
+            cats.push({ id: doc.id, name: category.name, color: category.color, icon: category.icon });
         });
-        setCategories(catsMap);
+        setCategories(cats.sort((a,b) => a.name.localeCompare(b.name)));
     }));
 
     return () => {
@@ -98,24 +102,43 @@ export function useTransactionsTable() {
     };
   }, [user]);
 
+  const accountMap = useMemo(() => {
+    const map = new Map<string, Omit<AccountInfo, 'id'>>();
+    accounts.forEach(acc => map.set(acc.id, { name: acc.name, color: acc.color }));
+    return map;
+  }, [accounts]);
+
+  const categoryMap = useMemo(() => {
+    const map = new Map<string, Omit<CategoryInfo, 'id' | 'name'>>();
+    categories.forEach(cat => map.set(cat.name, { color: cat.color, icon: cat.icon }));
+    return map;
+  }, [categories]);
+
   const filteredTransactions = useMemo(() => {
     return transactions
-      .filter((t) =>
-        filterType === "all" ? true : t.type === filterType
-      )
-      .filter((t) =>
-        t.description.toLowerCase().includes(searchTerm.toLowerCase())
+      .filter(t => filterType === "all" ? true : t.type === filterType)
+      .filter(t => filterAccount === "all" ? true : t.accountId === filterAccount)
+      .filter(t => filterCategory === "all" ? true : t.category === filterCategory)
+      .filter(t =>
+        t.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        t.notes?.toLowerCase().includes(searchTerm.toLowerCase())
       );
-  }, [transactions, filterType, searchTerm]);
+  }, [transactions, filterType, filterAccount, filterCategory, searchTerm]);
 
   return {
     loading,
     filteredTransactions,
     accounts,
     categories,
+    accountMap,
+    categoryMap,
     searchTerm,
     setSearchTerm,
     filterType,
     setFilterType,
+    filterAccount,
+    setFilterAccount,
+    filterCategory,
+    setFilterCategory
   };
 }

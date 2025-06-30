@@ -1,28 +1,28 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { addDoc, collection, Timestamp } from "firebase/firestore";
+import { doc, updateDoc, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserAccounts } from "@/hooks/useUserAccounts";
 import { useUserCategories } from "@/hooks/useUserCategories";
-import type { Category } from "@/types";
+import type { Category, Transaction } from "@/types";
 import Image from "next/image";
 
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar as CalendarIcon, PlusCircle, ArrowDownCircle, ArrowUpCircle, Landmark, Globe, ScanLine, X } from "lucide-react";
+import { Calendar as CalendarIcon, ArrowDownCircle, ArrowUpCircle, Landmark, Globe, ScanLine, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -44,17 +44,22 @@ const transactionSchema = z.object({
   notes: z.string().optional(),
 });
 
-export function AddTransactionDialog() {
-  const [open, setOpen] = useState(false);
+interface EditTransactionDialogProps {
+    transaction: Transaction;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+}
+
+export function EditTransactionDialog({ transaction, open, onOpenChange }: EditTransactionDialogProps) {
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<"income" | "expense">("expense");
+  const [activeTab, setActiveTab] = useState<"income" | "expense">(transaction.type);
   const accounts = useUserAccounts();
   const { categories, loading: categoriesLoading } = useUserCategories();
   
   const [isScanOpen, setScanOpen] = useState(false);
-  const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
+  const [receiptUrl, setReceiptUrl] = useState<string | null>(transaction.receiptUrl || null);
 
   const defaultGeneralCategory: Category = {
     id: 'default-general-category', name: 'generale', type: 'general',
@@ -64,19 +69,32 @@ export function AddTransactionDialog() {
   const form = useForm<z.infer<typeof transactionSchema>>({
     resolver: zodResolver(transactionSchema),
     defaultValues: {
-      type: "expense", amount: 0, description: "", accountId: "",
-      category: "", date: new Date(), notes: "",
+      type: transaction.type,
+      amount: transaction.amount,
+      description: transaction.description,
+      accountId: transaction.accountId,
+      category: transaction.category,
+      date: transaction.date.toDate(),
+      notes: transaction.notes || "",
     },
   });
+
+  useEffect(() => {
+    if(open) {
+        form.reset({
+            type: transaction.type,
+            amount: transaction.amount,
+            description: transaction.description,
+            accountId: transaction.accountId,
+            category: transaction.category,
+            date: transaction.date.toDate(),
+            notes: transaction.notes || "",
+        });
+        setReceiptUrl(transaction.receiptUrl || null);
+        setActiveTab(transaction.type);
+    }
+  }, [open, transaction, form]);
   
-  const resetForm = () => {
-    form.reset({
-      type: "expense", amount: 0, description: "", accountId: "",
-      category: "", date: new Date(), notes: "",
-    });
-    setReceiptUrl(null);
-    setActiveTab("expense");
-  };
 
   const onTabChange = (value: string) => {
     const type = value as "income" | "expense";
@@ -92,18 +110,16 @@ export function AddTransactionDialog() {
     }
     setLoading(true);
     try {
-      await addDoc(collection(db, "transactions"), {
+      const transactionRef = doc(db, "transactions", transaction.id);
+      await updateDoc(transactionRef, {
         ...values,
         date: Timestamp.fromDate(values.date),
-        userId: user.uid,
-        createdAt: Timestamp.now(),
         receiptUrl: receiptUrl || null,
       });
-      toast({ title: "Successo!", description: "Transazione aggiunta." });
-      resetForm();
-      setOpen(false);
+      toast({ title: "Successo!", description: "Transazione aggiornata." });
+      onOpenChange(false);
     } catch (error) {
-      toast({ variant: "destructive", title: "Errore", description: "Impossibile aggiungere la transazione." });
+      toast({ variant: "destructive", title: "Errore", description: "Impossibile aggiornare la transazione." });
     } finally {
       setLoading(false);
     }
@@ -132,12 +148,11 @@ export function AddTransactionDialog() {
 
   return (
     <>
-      <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) resetForm(); setOpen(isOpen); }}>
-        <DialogTrigger asChild><Button><PlusCircle className="mr-2 h-4 w-4" />Aggiungi Transazione</Button></DialogTrigger>
+      <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Nuova Transazione</DialogTitle>
-            <DialogDescription>Registra un'entrata o spesa.</DialogDescription>
+            <DialogTitle>Modifica Transazione</DialogTitle>
+            <DialogDescription>Aggiorna i dettagli di questa transazione.</DialogDescription>
           </DialogHeader>
           <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
@@ -192,8 +207,8 @@ export function AddTransactionDialog() {
                <FormField control={form.control} name="notes" render={({ field }) => (
                     <FormItem><FormLabel>Note (opzionale)</FormLabel><FormControl><Textarea placeholder="Aggiungi dettagli extra qui..." {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
-              <Button type="submit" disabled={loading || accounts.length === 0} className={cn("w-full", activeTab === 'income' && "bg-success hover:bg-success/90 text-success-foreground", activeTab === 'expense' && "bg-destructive hover:bg-destructive/90 text-destructive-foreground")}>
-                {loading ? "Aggiunta..." : (activeTab === 'expense' ? "Aggiungi Spesa" : "Aggiungi Entrata")}
+              <Button type="submit" disabled={loading} className="w-full">
+                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Salva Modifiche"}
               </Button>
             </form>
           </Form>

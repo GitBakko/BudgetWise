@@ -11,6 +11,8 @@ export type Transaction = {
   date: Timestamp;
   category: string;
   createdAt: Timestamp;
+  notes?: string;
+  receiptUrl?: string;
 };
 
 export type Account = {
@@ -31,7 +33,7 @@ export type BalanceSnapshot = {
 };
 
 export type Category = {
-  id: string;
+  id:string;
   userId: string;
   name: string;
   type: "income" | "expense" | "general";

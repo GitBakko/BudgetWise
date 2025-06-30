@@ -7,8 +7,6 @@ import * as z from "zod";
 import {
   addDoc,
   collection,
-  doc,
-  serverTimestamp,
   Timestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -117,7 +115,7 @@ export function AddTransactionDialog() {
         ...values,
         date: Timestamp.fromDate(values.date),
         userId: user.uid,
-        createdAt: serverTimestamp(),
+        createdAt: Timestamp.now(),
       });
       toast({
         title: "Successo!",

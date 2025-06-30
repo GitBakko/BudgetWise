@@ -1,10 +1,9 @@
-import { SummaryCards } from "@/components/dashboard/SummaryCards";
 import { RecentTransactions } from "@/components/dashboard/RecentTransactions";
 import { AddTransactionDialog } from "@/components/dashboard/AddTransactionDialog";
 import { SavingsAdvisor } from "@/components/dashboard/SavingsAdvisor";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { BalanceChart } from "@/components/dashboard/charts/BalanceChart";
+import { TransactionsSummary } from "@/components/history/TransactionsSummary";
 
 export default function DashboardPage() {
   return (
@@ -18,11 +17,8 @@ export default function DashboardPage() {
         </div>
         <AddTransactionDialog />
       </div>
-      <Suspense fallback={<SummarySkeleton />}>
-        <SummaryCards />
-      </Suspense>
-      <Suspense fallback={<Skeleton className="h-80 w-full" />}>
-        <BalanceChart />
+      <Suspense fallback={<SummaryAndChartSkeleton />}>
+        <TransactionsSummary timeframe="month" />
       </Suspense>
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
@@ -40,10 +36,9 @@ export default function DashboardPage() {
   );
 }
 
-function SummarySkeleton() {
+function SummaryAndChartSkeleton() {
   return (
-    <div className="grid gap-4 sm:grid-cols-3">
-      <Skeleton className="h-28 w-full" />
+    <div className="grid gap-4 sm:grid-cols-2">
       <Skeleton className="h-28 w-full" />
       <Skeleton className="h-28 w-full" />
     </div>

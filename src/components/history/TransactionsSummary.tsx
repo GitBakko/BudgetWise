@@ -12,7 +12,7 @@ interface TransactionsSummaryProps {
 export function TransactionsSummary({ timeframe }: TransactionsSummaryProps) {
   const { loading, summary } = useTransactionsSummary(timeframe);
 
-  if (loading) {
+  if (loading || !summary) {
     return (
       <div className="grid gap-4 sm:grid-cols-2">
           <Skeleton className="h-28 w-full" />

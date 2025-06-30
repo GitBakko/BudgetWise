@@ -12,7 +12,7 @@ import { it } from "date-fns/locale";
 export function useTransactionsSummary(timeframe: 'month' | 'year') {
     const { user } = useAuth();
     const [loading, setLoading] = useState(true);
-    const [summary, setSummary] = useState({ totalIncome: 0, totalExpense: 0 });
+    const [summary, setSummary] = useState<{ totalIncome: number; totalExpense: number } | null>(null);
     const [chartData, setChartData] = useState<Array<{ date: string; Entrate: number; Spese: number }>>([]);
 
     useEffect(() => {
@@ -22,6 +22,8 @@ export function useTransactionsSummary(timeframe: 'month' | 'year') {
         }
 
         setLoading(true);
+        setSummary(null);
+        setChartData([]);
 
         const now = new Date();
         const startDate = timeframe === 'month' ? startOfMonth(now) : startOfMonth(subYears(now, 1));

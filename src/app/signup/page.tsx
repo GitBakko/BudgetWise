@@ -17,41 +17,51 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { DollarSign, Wallet } from "lucide-react";
+import { UserPlus, Wallet } from "lucide-react";
 
-const loginSchema = z.object({
-  email: z.string().email({ message: "Invalid email address." }),
-  password: z
-    .string()
-    .min(6, { message: "Password must be at least 6 characters." }),
-});
+const signupSchema = z
+  .object({
+    email: z.string().email({ message: "Invalid email address." }),
+    password: z
+      .string()
+      .min(6, { message: "Password must be at least 6 characters." }),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match.",
+    path: ["confirmPassword"],
+  });
 
-export default function LoginPage() {
-  const { login } = useAuth();
+export default function SignupPage() {
+  const { signup } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const form = useForm<z.infer<typeof loginSchema>>({
-    resolver: zodResolver(loginSchema),
+  const form = useForm<z.infer<typeof signupSchema>>({
+    resolver: zodResolver(signupSchema),
     defaultValues: {
       email: "",
       password: "",
+      confirmPassword: "",
     },
   });
 
-  const onSubmit = async (values: z.infer<typeof loginSchema>) => {
+  const onSubmit = async (values: z.infer<typeof signupSchema>) => {
     setLoading(true);
     try {
-      await login(values.email, values.password);
-      toast({ title: "Success", description: "Logged in successfully." });
+      await signup(values.email, values.password);
+      toast({
+        title: "Account Created",
+        description: "Welcome to BudgetWise! You are now logged in.",
+      });
       router.push("/dashboard");
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Login Failed",
+        title: "Signup Failed",
         description: error.message,
       });
     } finally {
@@ -63,15 +73,17 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md shadow-2xl">
         <CardHeader className="text-center">
-          <div className="mx-auto bg-primary text-primary-foreground rounded-full p-3 w-fit mb-4">
+           <div className="mx-auto bg-primary text-primary-foreground rounded-full p-3 w-fit mb-4">
             <Wallet className="h-8 w-8" />
           </div>
-          <CardTitle className="text-3xl font-bold text-primary">BudgetWise</CardTitle>
-          <p className="text-muted-foreground">Welcome back! Please sign in to your account.</p>
+          <CardTitle className="text-3xl font-bold text-primary">Create an Account</CardTitle>
+          <CardDescription>
+            Join BudgetWise and take control of your finances.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
                 name="email"
@@ -106,15 +118,32 @@ export default function LoginPage() {
                   </FormItem>
                 )}
               />
+              <FormField
+                control={form.control}
+                name="confirmPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Confirm Password</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder="••••••••"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Signing In..." : "Sign In"}
+                {loading ? "Creating Account..." : "Sign Up"}
               </Button>
             </form>
           </Form>
           <p className="mt-6 text-center text-sm">
-            Don't have an account?{" "}
-            <Link href="/signup" className="font-medium text-primary hover:underline">
-              Sign up
+            Already have an account?{" "}
+            <Link href="/" className="font-medium text-primary hover:underline">
+              Sign in
             </Link>
           </p>
         </CardContent>

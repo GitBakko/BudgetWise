@@ -1,0 +1,173 @@
+"use client";
+
+import { useEffect, useState, useMemo } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import type { Transaction } from "@/types";
+import {
+  collection,
+  query,
+  where,
+  orderBy,
+  onSnapshot,
+} from "firebase/firestore";
+import { db } from "@/lib/firebase";
+
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/card";
+
+export function TransactionsTable() {
+  const { user } = useAuth();
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterType, setFilterType] = useState<"all" | "income" | "expense">(
+    "all"
+  );
+
+  useEffect(() => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    const q = query(
+      collection(db, "transactions"),
+      where("userId", "==", user.uid),
+      orderBy("date", "desc")
+    );
+
+    const unsubscribe = onSnapshot(
+      q,
+      (querySnapshot) => {
+        const transactionsData: Transaction[] = [];
+        querySnapshot.forEach((doc) => {
+          transactionsData.push({
+            id: doc.id,
+            ...doc.data(),
+          } as Transaction);
+        });
+        setTransactions(transactionsData);
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Error fetching transactions:", error);
+        setLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [user]);
+
+  const filteredTransactions = useMemo(() => {
+    return transactions
+      .filter((t) =>
+        filterType === "all" ? true : t.type === filterType
+      )
+      .filter((t) =>
+        t.description.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+  }, [transactions, filterType, searchTerm]);
+
+  if (loading) {
+    return <Skeleton className="h-96 w-full" />;
+  }
+
+  return (
+    <Card>
+      <CardContent className="p-0">
+        <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
+          <Input
+            placeholder="Search by description..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="max-w-sm"
+          />
+          <Select
+            value={filterType}
+            onValueChange={(value) =>
+              setFilterType(value as "all" | "income" | "expense")
+            }
+          >
+            <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectValue placeholder="Filter by type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="income">Income</SelectItem>
+              <SelectItem value="expense">Expense</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Description</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead>Date</TableHead>
+              <TableHead className="text-right">Amount</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredTransactions.length > 0 ? (
+              filteredTransactions.map((transaction) => (
+                <TableRow key={transaction.id}>
+                  <TableCell className="font-medium">
+                    {transaction.description}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="capitalize">
+                      {transaction.category}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {new Date(
+                      transaction.date.seconds * 1000
+                    ).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell
+                    className={`text-right font-semibold ${
+                      transaction.type === "income"
+                        ? "text-green-600 dark:text-green-400"
+                        : "text-red-600 dark:text-red-400"
+                    }`}
+                  >
+                    {transaction.type === "income" ? "+" : "-"}
+                    ${transaction.amount.toFixed(2)}
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={4}
+                  className="h-24 text-center text-muted-foreground"
+                >
+                  No transactions found.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

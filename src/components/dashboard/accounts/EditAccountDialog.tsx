@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -27,7 +27,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import type { Account } from "@/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Landmark, Loader2 } from "lucide-react";
+import { Landmark, Loader2, Upload } from "lucide-react";
 
 const accountSchema = z.object({
   name: z
@@ -36,6 +36,7 @@ const accountSchema = z.object({
   initialBalance: z.coerce
     .number()
     .min(0, { message: "Il saldo iniziale non può essere negativo." }),
+  iconUrl: z.string().optional(),
 });
 
 interface EditAccountDialogProps {
@@ -48,12 +49,15 @@ export function EditAccountDialog({ account, open, onOpenChange }: EditAccountDi
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [iconPreview, setIconPreview] = useState<string | undefined>(account.iconUrl);
 
   const form = useForm<z.infer<typeof accountSchema>>({
     resolver: zodResolver(accountSchema),
     defaultValues: {
       name: account.name,
       initialBalance: account.initialBalance,
+      iconUrl: account.iconUrl || "",
     },
   });
   
@@ -61,8 +65,10 @@ export function EditAccountDialog({ account, open, onOpenChange }: EditAccountDi
     form.reset({
         name: account.name,
         initialBalance: account.initialBalance,
+        iconUrl: account.iconUrl || "",
     });
-  }, [account, form]);
+    setIconPreview(account.iconUrl);
+  }, [account, form, open]);
 
 
   const onSubmit = async (values: z.infer<typeof accountSchema>) => {
@@ -80,6 +86,7 @@ export function EditAccountDialog({ account, open, onOpenChange }: EditAccountDi
       await updateDoc(accountRef, {
         name: values.name,
         initialBalance: values.initialBalance,
+        iconUrl: values.iconUrl || "",
       });
       toast({
         title: "Successo!",
@@ -97,6 +104,21 @@ export function EditAccountDialog({ account, open, onOpenChange }: EditAccountDi
     }
   };
 
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && file.type.startsWith("image/")) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            const dataUrl = reader.result as string;
+            setIconPreview(dataUrl);
+            form.setValue("iconUrl", dataUrl, { shouldDirty: true });
+        };
+        reader.readAsDataURL(file);
+    } else if (file) {
+        toast({ variant: "destructive", title: "File non valido", description: "Seleziona un file immagine (es. JPG, PNG)." });
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
@@ -106,17 +128,33 @@ export function EditAccountDialog({ account, open, onOpenChange }: EditAccountDi
             Aggiorna i dettagli del tuo conto.
           </DialogDescription>
         </DialogHeader>
-        <div className="flex items-center gap-4 py-4">
-             <Avatar className="h-16 w-16">
-                <AvatarImage src={account.iconUrl || undefined} alt={account.name} />
-                <AvatarFallback>
-                    <Landmark className="h-8 w-8 text-muted-foreground" />
-                </AvatarFallback>
-             </Avatar>
-             <p className="text-sm text-muted-foreground">L'icona non può essere modificata qui. Crea un nuovo conto per una nuova icona.</p>
-        </div>
+        
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <div className="space-y-2">
+              <FormLabel>Icona Conto</FormLabel>
+              <div className="flex items-center gap-4">
+                <Avatar className="h-16 w-16">
+                    <AvatarImage src={iconPreview || undefined} alt={account.name} />
+                    <AvatarFallback>
+                        <Landmark className="h-8 w-8 text-muted-foreground" />
+                    </AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col gap-2">
+                    <Input
+                        type="file"
+                        ref={fileInputRef}
+                        className="hidden"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                    />
+                    <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+                        <Upload className="mr-2 h-4 w-4" />
+                        Cambia Immagine
+                    </Button>
+                </div>
+              </div>
+            </div>
             <FormField
               control={form.control}
               name="name"

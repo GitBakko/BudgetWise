@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Image as ImageIcon, PlusCircle, Loader2 } from "lucide-react";
+import { Image as ImageIcon, PlusCircle, Loader2, Upload, RotateCcw } from "lucide-react";
 import { generateAccountIcon } from "@/ai/flows/generateIconFlow";
 import { useDebounce } from "use-debounce";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -48,7 +48,9 @@ export function AddAccountDialog() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [iconPreview, setIconPreview] = useState<string>("");
+  const [aiIconUrl, setAiIconUrl] = useState<string>("");
   const [iconLoading, setIconLoading] = useState<boolean>(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<z.infer<typeof accountSchema>>({
     resolver: zodResolver(accountSchema),
@@ -63,12 +65,16 @@ export function AddAccountDialog() {
   const [debouncedAccountName] = useDebounce(accountNameValue, 1000);
 
   useEffect(() => {
+    // Only generate icon if name is long enough and no custom image has been set
     if (debouncedAccountName && debouncedAccountName.length > 2) {
+      const formIcon = form.getValues("iconUrl");
+      if(formIcon && formIcon !== aiIconUrl) return;
+
       const generateIcon = async () => {
         setIconLoading(true);
-        setIconPreview("");
         try {
           const url = await generateAccountIcon(debouncedAccountName);
+          setAiIconUrl(url);
           setIconPreview(url);
           form.setValue("iconUrl", url);
         } catch (error) {
@@ -79,10 +85,12 @@ export function AddAccountDialog() {
       };
       generateIcon();
     } else {
+      setAiIconUrl("");
       setIconPreview("");
       form.setValue("iconUrl", "");
     }
-  }, [debouncedAccountName, form]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedAccountName]);
 
   const onSubmit = async (values: z.infer<typeof accountSchema>) => {
     if (!user) {
@@ -117,6 +125,30 @@ export function AddAccountDialog() {
       setLoading(false);
     }
   };
+  
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && file.type.startsWith("image/")) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            const dataUrl = reader.result as string;
+            setIconPreview(dataUrl);
+            form.setValue("iconUrl", dataUrl, { shouldDirty: true });
+        };
+        reader.readAsDataURL(file);
+    } else if (file) {
+        toast({ variant: "destructive", title: "File non valido", description: "Seleziona un file immagine (es. JPG, PNG)." });
+    }
+  };
+
+  const handleResetIcon = () => {
+    setIconPreview(aiIconUrl);
+    form.setValue("iconUrl", aiIconUrl);
+    if(fileInputRef.current) {
+        fileInputRef.current.value = "";
+    }
+  }
+
 
   const handleOpenChange = (isOpen: boolean) => {
     if (loading && !isOpen) return;
@@ -125,7 +157,11 @@ export function AddAccountDialog() {
     if (!isOpen) {
       form.reset({ name: "", initialBalance: 0, iconUrl: "" });
       setIconPreview("");
+      setAiIconUrl("");
       setIconLoading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
@@ -146,25 +182,46 @@ export function AddAccountDialog() {
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="flex items-center gap-4">
-              <Avatar className="h-16 w-16">
-                {iconLoading ? (
-                  <Skeleton className="h-full w-full rounded-full" />
-                ) : (
-                  <>
-                    <AvatarImage
-                      src={iconPreview || undefined}
-                      alt="Anteprima icona conto"
+            <div className="space-y-2">
+              <FormLabel>Icona Conto</FormLabel>
+              <div className="flex items-center gap-4">
+                <Avatar className="h-16 w-16">
+                  {iconLoading ? (
+                    <Skeleton className="h-full w-full rounded-full" />
+                  ) : (
+                    <>
+                      <AvatarImage
+                        src={iconPreview || undefined}
+                        alt="Anteprima icona conto"
+                      />
+                      <AvatarFallback className="bg-muted">
+                        <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                      </AvatarFallback>
+                    </>
+                  )}
+                </Avatar>
+                <div className="flex flex-col gap-2">
+                    <Input
+                        type="file"
+                        ref={fileInputRef}
+                        className="hidden"
+                        accept="image/*"
+                        onChange={handleFileChange}
                     />
-                    <AvatarFallback className="bg-muted">
-                      <ImageIcon className="h-8 w-8 text-muted-foreground" />
-                    </AvatarFallback>
-                  </>
-                )}
-              </Avatar>
-              <p className="text-sm text-muted-foreground">
-                L'icona viene generata automaticamente in base al nome del
-                conto.
+                    <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+                        <Upload className="mr-2 h-4 w-4" />
+                        Carica Immagine
+                    </Button>
+                    {iconPreview && aiIconUrl && iconPreview !== aiIconUrl && (
+                        <Button type="button" variant="ghost" size="sm" onClick={handleResetIcon}>
+                            <RotateCcw className="mr-2 h-4 w-4"/>
+                            Usa icona AI
+                        </Button>
+                    )}
+                </div>
+              </div>
+               <p className="text-xs text-muted-foreground">
+                L'icona viene generata automaticamente oppure puoi caricarne una tu.
               </p>
             </div>
             <FormField

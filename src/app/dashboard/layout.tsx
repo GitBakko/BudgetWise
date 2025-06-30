@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   LayoutDashboard,
   History,
@@ -21,7 +22,6 @@ import {
   SidebarTrigger,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
 
 export default function DashboardLayout({
   children,
@@ -58,9 +58,7 @@ export default function DashboardLayout({
           <Sidebar>
             <SidebarHeader className="p-4">
               <Link href="/dashboard" className="flex items-center gap-2">
-                <Button variant="ghost" size="icon" className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground rounded-full">
-                  <Wallet className="h-5 w-5" />
-                </Button>
+                <Image src="/logo.png" alt="BudgetWise Logo" width={36} height={36} />
                 <span className="text-xl font-semibold group-data-[collapsible=icon]:hidden">
                   BudgetWise
                 </span>

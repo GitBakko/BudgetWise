@@ -20,8 +20,9 @@ import {
 } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Wallet, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import Image from "next/image";
 
 const signupSchema = z
   .object({
@@ -134,8 +135,8 @@ export default function SignupPage() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md shadow-2xl">
         <CardHeader className="text-center">
-           <div className="mx-auto bg-primary text-primary-foreground rounded-full p-3 w-fit mb-4">
-            <Wallet className="h-8 w-8" />
+           <div className="mx-auto w-fit mb-4">
+            <Image src="/logo.png" alt="BudgetWise Logo" width={64} height={64} className="rounded-2xl" />
           </div>
           <CardTitle className="text-3xl font-bold text-primary">Crea un Account</CardTitle>
           <CardDescription>

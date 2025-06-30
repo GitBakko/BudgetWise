@@ -19,8 +19,9 @@ import {
 } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Wallet, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import Image from "next/image";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Indirizzo email non valido." }),
@@ -123,8 +124,8 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md shadow-2xl">
         <CardHeader className="text-center">
-          <div className="mx-auto bg-primary text-primary-foreground rounded-full p-3 w-fit mb-4">
-            <Wallet className="h-8 w-8" />
+          <div className="mx-auto w-fit mb-4">
+            <Image src="/logo.png" alt="BudgetWise Logo" width={64} height={64} className="rounded-2xl" />
           </div>
           <CardTitle className="text-3xl font-bold text-primary">BudgetWise</CardTitle>
           <p className="text-muted-foreground">Bentornato! Accedi al tuo account.</p>

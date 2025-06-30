@@ -48,9 +48,10 @@ interface AddCategoryDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initialType?: "income" | "expense";
+  existingCategories: string[];
 }
 
-export function AddCategoryDialog({ open, onOpenChange, initialType = 'expense' }: AddCategoryDialogProps) {
+export function AddCategoryDialog({ open, onOpenChange, initialType = 'expense', existingCategories }: AddCategoryDialogProps) {
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -86,7 +87,7 @@ export function AddCategoryDialog({ open, onOpenChange, initialType = 'expense' 
         setIconSuggestionLoading(true);
         try {
           const icon = await suggestCategoryIcon(debouncedCategoryName);
-          form.setValue("icon", icon, { shouldDirty: true });
+          form.setValue("icon", icon, { shouldValidate: true });
         } catch (error) {
           console.error("Failed to suggest icon:", error);
         } finally {
@@ -107,14 +108,10 @@ export function AddCategoryDialog({ open, onOpenChange, initialType = 'expense' 
     setLoading(true);
 
     try {
-      // Check for duplicate category name for the same user
-      const q = query(
-        collection(db, "categories"),
-        where("userId", "==", user.uid),
-        where("name", "==", values.name)
-      );
-      const querySnapshot = await getDocs(q);
-      if (!querySnapshot.empty) {
+      const lowerCaseName = values.name.toLowerCase();
+      
+      // Case-insensitive check for duplicates
+      if (existingCategories.some(name => name.toLowerCase() === lowerCaseName)) {
         toast({ variant: "destructive", title: "Nome duplicato", description: "Esiste già una categoria con questo nome." });
         setLoading(false);
         return;
@@ -122,7 +119,7 @@ export function AddCategoryDialog({ open, onOpenChange, initialType = 'expense' 
 
       await addDoc(collection(db, "categories"), {
         userId: user.uid,
-        name: values.name,
+        name: lowerCaseName,
         type: values.type,
         icon: values.icon,
         color: values.color,

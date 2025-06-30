@@ -47,9 +47,10 @@ interface EditCategoryDialogProps {
   category: Category;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  existingCategories: string[];
 }
 
-export function EditCategoryDialog({ category, open, onOpenChange }: EditCategoryDialogProps) {
+export function EditCategoryDialog({ category, open, onOpenChange, existingCategories }: EditCategoryDialogProps) {
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -87,7 +88,7 @@ export function EditCategoryDialog({ category, open, onOpenChange }: EditCategor
         setIconSuggestionLoading(true);
         try {
           const icon = await suggestCategoryIcon(debouncedCategoryName);
-          form.setValue("icon", icon, { shouldDirty: true });
+          form.setValue("icon", icon, { shouldValidate: true });
         } catch (error) {
           console.error("Failed to suggest icon:", error);
         } finally {
@@ -107,15 +108,12 @@ export function EditCategoryDialog({ category, open, onOpenChange }: EditCategor
     setLoading(true);
 
     try {
-      // Check for duplicate category name if name has changed
-      if (values.name !== category.name) {
-          const q = query(
-            collection(db, "categories"),
-            where("userId", "==", user.uid),
-            where("name", "==", values.name)
-          );
-          const querySnapshot = await getDocs(q);
-          if (!querySnapshot.empty) {
+      const lowerCaseName = values.name.toLowerCase();
+
+      // Case-insensitive check for duplicates if name has changed
+      if (lowerCaseName !== category.name.toLowerCase()) {
+          const otherCategoryNames = existingCategories.filter(name => name.toLowerCase() !== category.name.toLowerCase());
+          if (otherCategoryNames.some(name => name.toLowerCase() === lowerCaseName)) {
             toast({ variant: "destructive", title: "Nome duplicato", description: "Esiste già una categoria con questo nome." });
             setLoading(false);
             return;
@@ -124,7 +122,7 @@ export function EditCategoryDialog({ category, open, onOpenChange }: EditCategor
 
       const categoryRef = doc(db, "categories", category.id);
       await updateDoc(categoryRef, {
-        name: values.name,
+        name: lowerCaseName,
         type: values.type,
         icon: values.icon,
         color: values.color,

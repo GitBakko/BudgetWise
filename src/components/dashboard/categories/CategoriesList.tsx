@@ -73,13 +73,13 @@ export function CategoriesList() {
       const querySnapshot = await getDocs(q);
       const batch = writeBatch(db);
       querySnapshot.forEach(doc => {
-        batch.update(doc.ref, { category: "Altro" });
+        batch.update(doc.ref, { category: "altro" });
       });
       await batch.commit();
 
       toast({
         title: "Successo!",
-        description: `Categoria "${deletingCategory.name}" eliminata. Le transazioni associate sono state spostate in "Altro".`,
+        description: `Categoria "${deletingCategory.name}" eliminata. Le transazioni associate sono state spostate in "altro".`,
       });
     } catch (error) {
         console.error("Error deleting category:", error);
@@ -212,6 +212,7 @@ export function CategoriesList() {
         open={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}
         initialType={activeTab}
+        existingCategories={categories.map(c => c.name)}
       />
 
       {editingCategory && (
@@ -219,6 +220,7 @@ export function CategoriesList() {
           category={editingCategory}
           open={!!editingCategory}
           onOpenChange={(isOpen) => !isOpen && setEditingCategory(null)}
+          existingCategories={categories.map(c => c.name)}
         />
       )}
 

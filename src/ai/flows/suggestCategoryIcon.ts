@@ -26,25 +26,37 @@ const prompt = ai.definePrompt({
   name: 'suggestCategoryIconPrompt',
   input: {schema: SuggestCategoryIconInputSchema},
   output: {schema: SuggestCategoryIconOutputSchema.nullable()},
-  prompt: `You are an expert UI designer. Your task is to select the single best icon from a list that represents a given financial transaction category.
+  prompt: `Sei un esperto UI designer. Il tuo compito è selezionare la migliore icona singola da un elenco che rappresenti una data categoria di transazione finanziaria.
 
-**Instructions:**
-1.  Review the category name provided.
-2.  Choose the single most fitting icon from the "Available Icons" list.
-3.  Return **only** the exact, case-sensitive name of the icon. Do not include any other text, punctuation, or explanation.
+**Istruzioni:**
+1. Analizza il nome della categoria fornito.
+2. Scegli l'icona singola più adatta dalla lista "Icone Disponibili".
+3. Restituisci **solo** il nome esatto dell'icona, rispettando maiuscole e minuscole. Non includere alcun altro testo, punteggiatura o spiegazione. Se nessuna icona è adatta, restituisci "HelpCircle".
 
-**Available Icons:**
+**Icone Disponibili:**
 ${iconList.join(', ')}
 
 ---
-**Example:**
-Category Name: "Cena fuori"
-Your Output: UtensilsCrossed
+**Esempio 1:**
+Nome Categoria: "Cena fuori"
+La tua risposta: UtensilsCrossed
+---
+**Esempio 2:**
+Nome Categoria: "Stipendio"
+La tua risposta: DollarSign
+---
+**Esempio 3:**
+Nome Categoria: "Regalo per la nonna"
+La tua risposta: Gift
+---
+**Esempio 4:**
+Nome Categoria: "Abbonamento Netflix"
+La tua risposta: Film
 ---
 
-**Task:**
-Category Name: {{text}}
-Your Output:`
+**Tocca a te:**
+Nome Categoria: {{text}}
+La tua risposta:`
 });
 
 const suggestCategoryIconFlow = ai.defineFlow(
@@ -58,10 +70,10 @@ const suggestCategoryIconFlow = ai.defineFlow(
       return "ShoppingCart"; // Default icon
     }
     const {output} = await prompt(categoryName);
-    const suggestedIcon = output || 'HelpCircle';
+    const suggestedIcon = output?.trim();
 
     // Validate that the suggested icon is in our list
-    if (iconList.includes(suggestedIcon)) {
+    if (suggestedIcon && iconList.includes(suggestedIcon)) {
       return suggestedIcon;
     }
     

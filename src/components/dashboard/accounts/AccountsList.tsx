@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useMemo, Fragment } from "react";
+import React, { useEffect, useState, useMemo, Fragment, useRef } from "react";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import type { Account } from "@/types";
@@ -32,9 +32,24 @@ export function AccountsList() {
   const [deletingAccount, setDeletingAccount] = useState<Account | null>(null);
   const [expandedAccountId, setExpandedAccountId] = useState<string | null>(null);
 
+  const [isSearchVisible, setIsSearchVisible] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
   const handleToggleExpand = (accountId: string) => {
     setExpandedAccountId(prevId => (prevId === accountId ? null : accountId));
   };
+
+  useEffect(() => {
+    if (isSearchVisible) {
+        setTimeout(() => searchInputRef.current?.focus(), 100);
+    }
+  }, [isSearchVisible]);
+
+  const handleSearchBlur = () => {
+    if (!searchTerm) {
+        setIsSearchVisible(false);
+    }
+  }
 
   useEffect(() => {
     if (!user) {
@@ -132,22 +147,34 @@ export function AccountsList() {
   return (
     <>
       <Card>
-        <CardHeader>
-          <CardTitle>Lista Conti</CardTitle>
-          <CardDescription>
-            Elenco di tutti i tuoi conti registrati. Clicca la freccia per vederne l'andamento.
-          </CardDescription>
-          <div className="relative pt-2">
-             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-             <Input 
-                placeholder="Cerca conto..."
-                className="pl-9"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-             />
-          </div>
+        <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <CardTitle>Lista Conti</CardTitle>
+              <CardDescription>
+                Elenco di tutti i tuoi conti registrati.
+              </CardDescription>
+            </div>
+
+            {isSearchVisible ? (
+                <div className="relative w-full animate-in fade-in slide-in-from-right-4 sm:w-auto">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                        ref={searchInputRef}
+                        placeholder="Cerca conto..."
+                        className="pl-9 sm:w-48"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onBlur={handleSearchBlur}
+                    />
+                </div>
+            ) : (
+                <Button variant="ghost" size="icon" onClick={() => setIsSearchVisible(true)} className="self-end sm:self-center">
+                    <Search className="h-5 w-5" />
+                    <span className="sr-only">Cerca Conto</span>
+                </Button>
+            )}
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-0">
           {accounts.length > 0 ? (
             <Table>
               <TableHeader>

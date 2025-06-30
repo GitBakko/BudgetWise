@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -26,11 +26,20 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { PlusCircle } from "lucide-react";
+import { Image as ImageIcon, PlusCircle } from "lucide-react";
+import { generateAccountIcon } from "@/ai/flows/generateIconFlow";
+import { useDebounce } from "use-debounce";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const accountSchema = z.object({
-  name: z.string().min(2, { message: "Il nome deve contenere almeno 2 caratteri." }),
-  initialBalance: z.coerce.number().min(0, { message: "Il saldo iniziale non può essere negativo." }),
+  name: z
+    .string()
+    .min(2, { message: "Il nome deve contenere almeno 2 caratteri." }),
+  initialBalance: z.coerce
+    .number()
+    .min(0, { message: "Il saldo iniziale non può essere negativo." }),
+  iconUrl: z.string().optional(),
 });
 
 export function AddAccountDialog() {
@@ -38,14 +47,42 @@ export function AddAccountDialog() {
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
+  const [iconPreview, setIconPreview] = useState<string>("");
+  const [iconLoading, setIconLoading] = useState<boolean>(false);
 
   const form = useForm<z.infer<typeof accountSchema>>({
     resolver: zodResolver(accountSchema),
     defaultValues: {
       name: "",
       initialBalance: 0,
+      iconUrl: "",
     },
   });
+
+  const accountNameValue = form.watch("name");
+  const [debouncedAccountName] = useDebounce(accountNameValue, 1000);
+
+  useEffect(() => {
+    if (debouncedAccountName && debouncedAccountName.length > 2) {
+      const generateIcon = async () => {
+        setIconLoading(true);
+        setIconPreview("");
+        try {
+          const url = await generateAccountIcon(debouncedAccountName);
+          setIconPreview(url);
+          form.setValue("iconUrl", url);
+        } catch (error) {
+          console.error("Failed to generate icon:", error);
+        } finally {
+          setIconLoading(false);
+        }
+      };
+      generateIcon();
+    } else {
+      setIconPreview("");
+      form.setValue("iconUrl", "");
+    }
+  }, [debouncedAccountName, form]);
 
   const onSubmit = async (values: z.infer<typeof accountSchema>) => {
     if (!user) {
@@ -59,17 +96,15 @@ export function AddAccountDialog() {
     setLoading(true);
     try {
       await addDoc(collection(db, "accounts"), {
-        ...values,
+        name: values.name,
+        initialBalance: values.initialBalance,
+        iconUrl: values.iconUrl || "",
         userId: user.uid,
         createdAt: Timestamp.now(),
       });
       toast({
         title: "Successo!",
         description: "Conto aggiunto con successo.",
-      });
-      form.reset({
-        name: "",
-        initialBalance: 0,
       });
       setOpen(false);
     } catch (error) {
@@ -83,8 +118,17 @@ export function AddAccountDialog() {
     }
   };
 
+  const handleOpenChange = (isOpen: boolean) => {
+    if (!isOpen) {
+      form.reset({ name: "", initialBalance: 0, iconUrl: "" });
+      setIconPreview("");
+      setIconLoading(false);
+    }
+    setOpen(isOpen);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button>
           <PlusCircle className="mr-2 h-4 w-4" />
@@ -100,6 +144,27 @@ export function AddAccountDialog() {
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <div className="flex items-center gap-4">
+              <Avatar className="h-16 w-16">
+                {iconLoading ? (
+                  <Skeleton className="h-full w-full rounded-full" />
+                ) : (
+                  <>
+                    <AvatarImage
+                      src={iconPreview}
+                      alt="Anteprima icona conto"
+                    />
+                    <AvatarFallback className="bg-muted">
+                      <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                    </AvatarFallback>
+                  </>
+                )}
+              </Avatar>
+              <p className="text-sm text-muted-foreground">
+                L'icona viene generata automaticamente in base al nome del
+                conto.
+              </p>
+            </div>
             <FormField
               control={form.control}
               name="name"

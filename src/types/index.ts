@@ -18,6 +18,7 @@ export type Account = {
   name: string;
   initialBalance: number;
   createdAt: Timestamp;
+  iconUrl?: string;
 };
 
 export type Category = {

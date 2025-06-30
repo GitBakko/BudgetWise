@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Landmark } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export function AccountsList() {
   const { user } = useAuth();
@@ -73,7 +74,12 @@ export function AccountsList() {
                 <TableRow key={account.id}>
                   <TableCell>
                     <div className="flex items-center gap-3">
-                      <Landmark className="h-5 w-5 text-muted-foreground" />
+                       <Avatar>
+                        <AvatarImage src={account.iconUrl} alt={account.name} />
+                        <AvatarFallback>
+                            <Landmark className="h-5 w-5 text-muted-foreground" />
+                        </AvatarFallback>
+                      </Avatar>
                       <span className="font-medium">{account.name}</span>
                     </div>
                   </TableCell>

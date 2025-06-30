@@ -184,7 +184,7 @@ export function EditAccountDialog({ account, open, onOpenChange }: EditAccountDi
     defaultValues: {
       name: account.name,
       initialBalance: account.initialBalance,
-      balanceStartDate: account.balanceStartDate.toDate(),
+      balanceStartDate: (account.balanceStartDate || account.createdAt).toDate(),
       iconUrl: account.iconUrl || "",
       color: account.color || "#3F51B5",
     },
@@ -195,7 +195,7 @@ export function EditAccountDialog({ account, open, onOpenChange }: EditAccountDi
       form.reset({
           name: account.name,
           initialBalance: account.initialBalance,
-          balanceStartDate: account.balanceStartDate.toDate(),
+          balanceStartDate: (account.balanceStartDate || account.createdAt).toDate(),
           iconUrl: account.iconUrl || "",
           color: account.color || "#3F51B5",
       });
@@ -510,3 +510,5 @@ export function EditAccountDialog({ account, open, onOpenChange }: EditAccountDi
     </>
   );
 }
+
+    

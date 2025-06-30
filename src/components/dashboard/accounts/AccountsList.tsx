@@ -139,7 +139,7 @@ export function AccountsList() {
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar>
-                          <AvatarImage src={account.iconUrl} alt={account.name} />
+                          <AvatarImage src={account.iconUrl || undefined} alt={account.name} />
                           <AvatarFallback>
                               <Landmark className="h-5 w-5 text-muted-foreground" />
                           </AvatarFallback>
@@ -171,7 +171,7 @@ export function AccountsList() {
                                 <span>Imposta Saldo a Data</span>
                               </DropdownMenuItem>
                                <DropdownMenuSeparator />
-                              <DropdownMenuItem onSelect={() => setDeletingAccount(account)} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                              <DropdownMenuItem onSelect={() => setDeletingAccount(account)} className="text-destructive focus:text-destructive-foreground focus:bg-destructive/90">
                                 <Trash2 className="mr-2 h-4 w-4"/>
                                 <span>Elimina Conto</span>
                               </DropdownMenuItem>

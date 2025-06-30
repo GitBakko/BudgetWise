@@ -108,7 +108,7 @@ export function EditAccountDialog({ account, open, onOpenChange }: EditAccountDi
         </DialogHeader>
         <div className="flex items-center gap-4 py-4">
              <Avatar className="h-16 w-16">
-                <AvatarImage src={account.iconUrl} alt={account.name} />
+                <AvatarImage src={account.iconUrl || undefined} alt={account.name} />
                 <AvatarFallback>
                     <Landmark className="h-8 w-8 text-muted-foreground" />
                 </AvatarFallback>

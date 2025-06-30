@@ -106,7 +106,7 @@ export function AddAccountDialog() {
         title: "Successo!",
         description: "Conto aggiunto con successo.",
       });
-      setOpen(false);
+      handleOpenChange(false);
     } catch (error) {
       toast({
         variant: "destructive",
@@ -153,7 +153,7 @@ export function AddAccountDialog() {
                 ) : (
                   <>
                     <AvatarImage
-                      src={iconPreview}
+                      src={iconPreview || undefined}
                       alt="Anteprima icona conto"
                     />
                     <AvatarFallback className="bg-muted">

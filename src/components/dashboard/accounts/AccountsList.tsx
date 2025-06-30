@@ -51,7 +51,7 @@ export function AccountsList() {
         querySnapshot.forEach((doc) => {
           accountsData.push({ id: doc.id, ...doc.data() } as Account);
         });
-        accountsData.sort((a, b) => b.createdAt.seconds - a.createdAt.seconds);
+        accountsData.sort((a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0));
         setAccounts(accountsData);
         setLoading(false);
       },
@@ -125,7 +125,7 @@ export function AccountsList() {
         <CardHeader>
           <CardTitle>Lista Conti</CardTitle>
           <CardDescription>
-            Elenco di tutti i tuoi conti registrati. Clicca sul grafico per vederne l'andamento.
+            Elenco di tutti i tuoi conti registrati. Clicca la freccia per vederne l'andamento.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -146,9 +146,9 @@ export function AccountsList() {
                     <TableRow>
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <Avatar className="rounded-lg h-10 w-10">
-                            <AvatarImage src={account.iconUrl || undefined} alt={account.name} className="object-cover"/>
-                            <AvatarFallback className="rounded-lg bg-muted">
+                          <Avatar className="rounded-md h-10 w-10">
+                            <AvatarImage src={account.iconUrl || undefined} alt={account.name} />
+                            <AvatarFallback className="rounded-md bg-muted">
                                 <Landmark className="h-5 w-5 text-muted-foreground" />
                             </AvatarFallback>
                           </Avatar>
@@ -156,7 +156,7 @@ export function AccountsList() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {new Date(account.createdAt.seconds * 1000).toLocaleDateString("it-IT")}
+                        {account.createdAt ? new Date(account.createdAt.seconds * 1000).toLocaleDateString("it-IT") : 'N/A'}
                       </TableCell>
                       <TableCell className="text-right font-semibold">
                         €{account.initialBalance.toFixed(2)}
@@ -185,7 +185,7 @@ export function AccountsList() {
                                   <span>Imposta Saldo a Data</span>
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem onSelect={() => setDeletingAccount(account)} className="text-destructive focus:text-destructive-foreground focus:bg-destructive/90">
+                                <DropdownMenuItem onSelect={() => setDeletingAccount(account)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
                                   <Trash2 className="mr-2 h-4 w-4"/>
                                   <span>Elimina Conto</span>
                                 </DropdownMenuItem>
@@ -194,7 +194,7 @@ export function AccountsList() {
                       </TableCell>
                     </TableRow>
                      {expandedAccountId === account.id && (
-                        <TableRow className="bg-muted/5 hover:bg-muted/5 animate-fade-in">
+                        <TableRow className="bg-muted/5 hover:bg-muted/5 animate-in fade-in-50">
                             <TableCell colSpan={5} className="p-2 md:p-4">
                                 <AccountTrendChart account={account} />
                             </TableCell>

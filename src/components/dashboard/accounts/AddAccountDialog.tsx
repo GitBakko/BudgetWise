@@ -44,7 +44,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ImageIcon, PlusCircle, Loader2, Upload, RotateCcw, RefreshCw } from "lucide-react";
+import { Landmark, PlusCircle, Loader2, Upload, RotateCcw, RefreshCw } from "lucide-react";
 
 
 const accountSchema = z.object({
@@ -305,7 +305,9 @@ export function AddAccountDialog() {
         reader.onloadend = async () => {
             const dataUrl = reader.result as string;
             
+            setIconLoading(true);
             const trimmedDataUrl = await trimImage(dataUrl);
+            setIconLoading(false);
 
             setIconPreview(trimmedDataUrl);
             form.setValue("iconUrl", trimmedDataUrl, { shouldDirty: true });
@@ -360,30 +362,31 @@ export function AddAccountDialog() {
             <div className="space-y-2">
               <FormLabel>Icona Conto</FormLabel>
               <div className="flex items-center gap-4">
-                <button type="button" onClick={() => fileInputRef.current?.click()} className="relative group rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-                    <Avatar className="h-16 w-16 rounded-lg">
+                <button type="button" onClick={() => fileInputRef.current?.click()} className="relative group rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                    <Avatar className="h-16 w-16 rounded-md">
                       {iconLoading ? (
-                        <Skeleton className="h-full w-full rounded-lg" />
+                        <div className="h-full w-full flex items-center justify-center bg-muted">
+                            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground"/>
+                        </div>
                       ) : (
                         <>
                           <AvatarImage
                             src={iconPreview || undefined}
                             alt="Anteprima icona conto"
-                            className="object-cover"
                           />
-                          <AvatarFallback className="rounded-lg bg-muted">
-                            <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                          <AvatarFallback className="rounded-md bg-muted">
+                            <Landmark className="h-8 w-8 text-muted-foreground" />
                           </AvatarFallback>
                         </>
                       )}
                     </Avatar>
-                    <div className="absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center text-white opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity">
+                    <div className="absolute inset-0 bg-black/40 rounded-md flex items-center justify-center text-white opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity">
                         <Upload className="h-6 w-6"/>
                     </div>
                 </button>
                 <div className="flex-1 space-y-2">
                     <p className="text-sm text-muted-foreground">
-                        Clicca sull'icona per caricare un'immagine.
+                        Clicca sull'icona per caricare un'immagine o attendi la generazione AI.
                     </p>
                     <div className="flex items-center gap-2">
                       {iconPreview && aiIconUrl && iconPreview !== aiIconUrl ? (
@@ -407,9 +410,6 @@ export function AddAccountDialog() {
                     onChange={handleFileChange}
                 />
               </div>
-               <p className="text-xs text-muted-foreground pt-1">
-                Se non carichi un'icona, ne verrà generata una automaticamente.
-              </p>
             </div>
             <FormField
               control={form.control}

@@ -11,6 +11,7 @@ import { db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserAccounts } from "@/hooks/useUserAccounts";
 import { useUserCategories } from "@/hooks/useUserCategories";
+import type { Category } from "@/types";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -43,7 +44,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Calendar as CalendarIcon, PlusCircle, ArrowDownCircle, ArrowUpCircle, Landmark } from "lucide-react";
+import { Calendar as CalendarIcon, PlusCircle, ArrowDownCircle, ArrowUpCircle, Landmark, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -72,6 +73,16 @@ export function AddTransactionDialog() {
   const [activeTab, setActiveTab] = useState<"income" | "expense">("expense");
   const accounts = useUserAccounts();
   const { categories, loading: categoriesLoading } = useUserCategories();
+
+  const defaultGeneralCategory: Category = {
+    id: 'default-general-category',
+    name: 'Generale',
+    type: 'general',
+    icon: 'Globe',
+    color: '#444444',
+    userId: 'system',
+    createdAt: Timestamp.now(),
+  };
 
   const form = useForm<z.infer<typeof transactionSchema>>({
     resolver: zodResolver(transactionSchema),
@@ -139,7 +150,8 @@ export function AddTransactionDialog() {
   const selectedAccountId = form.watch("accountId");
   const selectedAccount = accounts.find(a => a.id === selectedAccountId);
 
-  const availableCategories = categories.filter((c) => c.type === activeTab || c.type === 'general');
+  const userCategories = categories.filter((c) => c.type === activeTab || c.type === 'general');
+  const availableCategories = [defaultGeneralCategory, ...userCategories];
   const selectedCategoryName = form.watch("category");
   const selectedCategory = availableCategories.find(c => c.name === selectedCategoryName);
 
@@ -369,13 +381,13 @@ export function AddTransactionDialog() {
             />
             <Button 
                 type="submit" 
-                disabled={loading || accounts.length === 0 || availableCategories.length === 0} 
+                disabled={loading || accounts.length === 0} 
                 className={cn(
                     "w-full",
                     activeTab === 'income' && "bg-success hover:bg-success/90 text-success-foreground",
                     activeTab === 'expense' && "bg-destructive hover:bg-destructive/90 text-destructive-foreground"
                 )}>
-              {loading ? "Aggiunta in corso..." : "Aggiungi Transazione"}
+              {loading ? "Aggiunta in corso..." : (activeTab === 'expense' ? "Aggiungi Spesa" : "Aggiungi Entrata")}
             </Button>
           </form>
         </Form>

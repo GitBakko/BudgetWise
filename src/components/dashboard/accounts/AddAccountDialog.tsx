@@ -106,19 +106,21 @@ export function AddAccountDialog() {
         title: "Successo!",
         description: "Conto aggiunto con successo.",
       });
-      handleOpenChange(false);
+      setLoading(false);
+      setOpen(false);
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Errore",
         description: "Impossibile aggiungere il conto. Riprova.",
       });
-    } finally {
       setLoading(false);
     }
   };
 
   const handleOpenChange = (isOpen: boolean) => {
+    if (loading && !isOpen) return;
+
     setOpen(isOpen);
     if (!isOpen) {
       form.reset({ name: "", initialBalance: 0, iconUrl: "" });

@@ -18,7 +18,6 @@ import {
   query,
   where,
   orderBy,
-  limit,
   onSnapshot,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -34,18 +33,26 @@ export function SavingsAdvisor() {
   useEffect(() => {
     if (!user) return;
 
+    // The original query required a composite index.
+    // This modified query fetches recent transactions for the user
+    // and filters for expenses on the client-side to avoid the index requirement.
     const q = query(
       collection(db, "transactions"),
       where("userId", "==", user.uid),
-      where("type", "==", "expense"),
-      orderBy("date", "desc"),
-      limit(50)
+      orderBy("date", "desc")
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const trans: Transaction[] = [];
-      snapshot.forEach((doc) => trans.push({ id: doc.id, ...doc.data() } as Transaction));
-      setTransactions(trans);
+      const allTransactions: Transaction[] = [];
+      snapshot.forEach((doc) =>
+        allTransactions.push({ id: doc.id, ...doc.data() } as Transaction)
+      );
+
+      const expenseTransactions = allTransactions
+        .filter((t) => t.type === "expense")
+        .slice(0, 50);
+
+      setTransactions(expenseTransactions);
     });
 
     return () => unsubscribe();

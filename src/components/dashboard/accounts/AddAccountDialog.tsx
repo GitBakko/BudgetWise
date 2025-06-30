@@ -106,7 +106,6 @@ export function AddAccountDialog() {
         title: "Successo!",
         description: "Conto aggiunto con successo.",
       });
-      setLoading(false);
       setOpen(false);
     } catch (error) {
       toast({
@@ -114,6 +113,7 @@ export function AddAccountDialog() {
         title: "Errore",
         description: "Impossibile aggiungere il conto. Riprova.",
       });
+    } finally {
       setLoading(false);
     }
   };

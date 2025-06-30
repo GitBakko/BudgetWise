@@ -44,7 +44,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Image as ImageIcon, PlusCircle, Loader2, Upload, RotateCcw } from "lucide-react";
+import { Image as ImageIcon, PlusCircle, Loader2, Upload, RotateCcw, RefreshCw } from "lucide-react";
 
 
 const accountSchema = z.object({
@@ -99,6 +99,34 @@ export function AddAccountDialog() {
   const accountNameValue = form.watch("name");
   const [debouncedAccountName] = useDebounce(accountNameValue, 1000);
 
+  const handleRegenerateIcon = async () => {
+    const name = form.getValues("name");
+    if (!name || name.length < 3) {
+      toast({
+        title: "Nome troppo corto",
+        description: "Inserisci un nome di almeno 3 caratteri.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIconLoading(true);
+    try {
+      const url = await generateAccountIcon(name);
+      setAiIconUrl(url);
+      setIconPreview(url);
+      form.setValue("iconUrl", url, { shouldDirty: true });
+    } catch (error) {
+      console.error("Failed to regenerate icon:", error);
+      toast({
+        title: "Errore",
+        description: "Impossibile rigenerare l'icona.",
+        variant: "destructive",
+      });
+    } finally {
+      setIconLoading(false);
+    }
+  };
+
    useEffect(() => {
     if (!user || !open) return;
     const fetchAccounts = async () => {
@@ -112,29 +140,29 @@ export function AddAccountDialog() {
 
   useEffect(() => {
     if (debouncedAccountName && debouncedAccountName.length > 2) {
-      const formIcon = form.getValues("iconUrl");
-      if(formIcon && formIcon !== aiIconUrl) return;
-
-      const generateIcon = async () => {
-        setIconLoading(true);
-        try {
-          const url = await generateAccountIcon(debouncedAccountName);
-          setAiIconUrl(url);
-          setIconPreview(url);
-          form.setValue("iconUrl", url);
-        } catch (error) {
-          console.error("Failed to generate icon:", error);
-        } finally {
-          setIconLoading(false);
-        }
-      };
-      generateIcon();
+      const isUserIcon = iconPreview && aiIconUrl !== iconPreview;
+      if (!isUserIcon) {
+        const autoGenerate = async () => {
+          setIconLoading(true);
+          try {
+            const url = await generateAccountIcon(debouncedAccountName);
+            setAiIconUrl(url);
+            setIconPreview(url);
+            form.setValue("iconUrl", url);
+          } catch (error) {
+            console.error("Failed to generate icon:", error);
+          } finally {
+            setIconLoading(false);
+          }
+        };
+        autoGenerate();
+      }
     } else {
       setAiIconUrl("");
       setIconPreview("");
       form.setValue("iconUrl", "");
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedAccountName]);
   
   const proceedWithSubmission = async (values: FormValues) => {
@@ -273,12 +301,19 @@ export function AddAccountDialog() {
                     <p className="text-sm text-muted-foreground">
                         Clicca sull'icona per caricare un'immagine.
                     </p>
-                    {iconPreview && aiIconUrl && iconPreview !== aiIconUrl && (
-                        <Button type="button" variant="ghost" size="sm" onClick={handleResetIcon} className="text-xs h-auto py-1 px-2">
-                            <RotateCcw className="mr-1.5 h-3 w-3"/>
-                            Usa icona AI
-                        </Button>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {iconPreview && aiIconUrl && iconPreview !== aiIconUrl ? (
+                          <Button type="button" variant="ghost" size="sm" onClick={handleResetIcon} className="text-xs h-auto py-1 px-2">
+                              <RotateCcw className="mr-1.5 h-3 w-3"/>
+                              Usa icona AI
+                          </Button>
+                      ) : (
+                          <Button type="button" variant="ghost" size="sm" onClick={handleRegenerateIcon} disabled={iconLoading || accountNameValue.length < 3} className="text-xs h-auto py-1 px-2">
+                              <RefreshCw className="mr-1.5 h-3 w-3"/>
+                              {iconLoading ? 'Genero...' : 'Rigenera'}
+                          </Button>
+                      )}
+                    </div>
                 </div>
                  <Input
                     type="file"

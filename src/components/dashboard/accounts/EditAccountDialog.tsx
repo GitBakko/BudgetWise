@@ -10,6 +10,8 @@ import { useAuth } from "@/hooks/useAuth";
 import type { Account } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 
+import { generateAccountIcon } from "@/ai/flows/generateIconFlow";
+
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -38,7 +40,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Landmark, Loader2, Upload } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Landmark, Loader2, Upload, RefreshCw } from "lucide-react";
 
 
 const accountSchema = z.object({
@@ -77,6 +80,7 @@ export function EditAccountDialog({ account, open, onOpenChange }: EditAccountDi
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [iconPreview, setIconPreview] = useState<string | undefined>(account.iconUrl);
+  const [iconLoading, setIconLoading] = useState<boolean>(false);
   
   const [userAccounts, setUserAccounts] = useState<Account[]>([]);
   const [duplicateInfo, setDuplicateInfo] = useState<{
@@ -114,6 +118,34 @@ export function EditAccountDialog({ account, open, onOpenChange }: EditAccountDi
     };
     fetchAccounts();
   }, [user, open]);
+
+  const handleRegenerateIcon = async () => {
+    const name = form.getValues("name");
+    if (!name || name.length < 3) {
+      toast({
+        title: "Nome troppo corto",
+        description: "Inserisci un nome di almeno 3 caratteri per generare una nuova icona.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIconLoading(true);
+    try {
+      const url = await generateAccountIcon(name);
+      setIconPreview(url);
+      form.setValue("iconUrl", url, { shouldDirty: true });
+    } catch (error) {
+      console.error("Failed to regenerate icon:", error);
+      toast({
+        title: "Errore",
+        description: "Impossibile rigenerare l'icona.",
+        variant: "destructive",
+      });
+    } finally {
+      setIconLoading(false);
+    }
+  };
 
   const proceedWithSubmission = async (values: FormValues) => {
     if (!user) {
@@ -209,19 +241,29 @@ export function EditAccountDialog({ account, open, onOpenChange }: EditAccountDi
                 <div className="flex items-center gap-4">
                     <button type="button" onClick={() => fileInputRef.current?.click()} className="relative group rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                         <Avatar className="h-16 w-16">
-                            <AvatarImage src={iconPreview || undefined} alt={account.name} />
-                            <AvatarFallback>
-                                <Landmark className="h-8 w-8 text-muted-foreground" />
-                            </AvatarFallback>
+                           {iconLoading ? (
+                                <Skeleton className="h-full w-full rounded-full" />
+                            ) : (
+                                <>
+                                    <AvatarImage src={iconPreview || undefined} alt={account.name} />
+                                    <AvatarFallback>
+                                        <Landmark className="h-8 w-8 text-muted-foreground" />
+                                    </AvatarFallback>
+                                </>
+                            )}
                         </Avatar>
                         <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity">
                             <Upload className="h-6 w-6"/>
                         </div>
                     </button>
-                    <div className="flex-1">
+                    <div className="flex-1 space-y-2">
                         <p className="text-sm text-muted-foreground">
                             Clicca sull'icona per cambiare l'immagine.
                         </p>
+                         <Button type="button" variant="ghost" size="sm" onClick={handleRegenerateIcon} disabled={iconLoading || form.getValues('name').length < 3} className="text-xs h-auto py-1 px-2">
+                            <RefreshCw className="mr-1.5 h-3 w-3"/>
+                            {iconLoading ? 'Genero...' : 'Rigenera Icona AI'}
+                        </Button>
                     </div>
                     <Input
                         type="file"
@@ -259,7 +301,7 @@ export function EditAccountDialog({ account, open, onOpenChange }: EditAccountDi
                 </FormItem>
               )}
             />
-            <Button type="submit" disabled={loading} className="w-full">
+            <Button type="submit" disabled={loading || iconLoading} className="w-full">
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -25,7 +25,7 @@ interface AccountsListProps {
 export function AccountsList({ onImportClick }: AccountsListProps) {
   const {
     loading,
-    accountsWithInitialData,
+    accountsWithComputedData,
     searchTerm,
     setSearchTerm,
     isSearchVisible,
@@ -78,20 +78,20 @@ export function AccountsList({ onImportClick }: AccountsListProps) {
             )}
         </CardHeader>
         <CardContent className="pt-0">
-          {accountsWithInitialData.length > 0 ? (
+          {accountsWithComputedData.length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome Conto</TableHead>
-                  <TableHead>Data Creazione</TableHead>
-                  <TableHead>Data Saldo Iniziale</TableHead>
-                  <TableHead className="text-right">Saldo Iniziale</TableHead>
+                  <TableHead className="text-center">Saldi Registrati</TableHead>
+                  <TableHead>Ultimo Saldo</TableHead>
+                  <TableHead className="text-right">Data Ultimo Saldo</TableHead>
                   <TableHead className="w-[50px] text-center"></TableHead>
                   <TableHead className="w-[50px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {accountsWithInitialData.map((account) => (
+                {accountsWithComputedData.map((account) => (
                   <Fragment key={account.id}>
                     <TableRow>
                       <TableCell>
@@ -108,14 +108,14 @@ export function AccountsList({ onImportClick }: AccountsListProps) {
                           </div>
                         </div>
                       </TableCell>
-                       <TableCell>
-                        {new Date(account.createdAt.seconds * 1000).toLocaleDateString("it-IT")}
+                       <TableCell className="text-center font-medium">
+                        {account.snapshotCount}
                       </TableCell>
-                      <TableCell>
-                        {account.balanceStartDate ? new Date(account.balanceStartDate.seconds * 1000).toLocaleDateString("it-IT") : 'N/D'}
+                      <TableCell className="font-semibold">
+                        {typeof account.lastBalance === 'number' ? `€${account.lastBalance.toFixed(2)}` : 'N/D'}
                       </TableCell>
-                      <TableCell className="text-right font-semibold">
-                        €{account.initialBalance.toFixed(2)}
+                      <TableCell className="text-right">
+                        {account.lastBalanceDate ? new Date(account.lastBalanceDate.seconds * 1000).toLocaleDateString("it-IT") : 'N/D'}
                       </TableCell>
                       <TableCell className="text-center">
                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleToggleExpand(account.id)}>
@@ -170,7 +170,7 @@ export function AccountsList({ onImportClick }: AccountsListProps) {
                 ))}
               </TableBody>
             </Table>
-          ) : accountsWithInitialData.length > 0 && searchTerm ? (
+          ) : accountsWithComputedData.length > 0 && searchTerm ? (
              <p className="py-8 text-center text-muted-foreground">
                 Nessun conto trovato per "{searchTerm}".
             </p>

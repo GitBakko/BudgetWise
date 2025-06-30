@@ -91,18 +91,19 @@ export function useAccountsList() {
         }
     }, [user]);
 
-    const accountsWithInitialData = useMemo(() => {
+    const accountsWithComputedData = useMemo(() => {
         const enrichedAccounts = accounts.map(account => {
             const accountSnaps = snapshots
                 .filter(s => s.accountId === account.id)
-                .sort((a, b) => a.date.seconds - b.date.seconds);
+                .sort((a, b) => b.date.seconds - a.date.seconds); // Descending sort for latest first
             
-            const initialSnapshot = accountSnaps[0];
+            const latestSnapshot = accountSnaps[0];
             
             return {
                 ...account,
-                initialBalance: initialSnapshot?.balance ?? 0,
-                balanceStartDate: initialSnapshot?.date, // This will be a Timestamp or undefined
+                snapshotCount: accountSnaps.length,
+                lastBalance: latestSnapshot?.balance,
+                lastBalanceDate: latestSnapshot?.date,
             };
         });
         
@@ -165,7 +166,7 @@ export function useAccountsList() {
 
     return {
         loading,
-        accountsWithInitialData,
+        accountsWithComputedData,
         searchTerm,
         setSearchTerm,
         isSearchVisible,

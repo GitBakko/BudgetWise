@@ -1,5 +1,3 @@
-'use server';
-
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '@/lib/firebase';
 

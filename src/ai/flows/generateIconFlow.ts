@@ -29,17 +29,23 @@ const generateIconFlow = ai.defineFlow(
   async (accountName) => {
     const {media} = await ai.generate({
       model: 'googleai/gemini-2.0-flash-preview-image-generation',
-      prompt: `You are an expert logo designer for a financial app. Your task is to create a simple, clean, modern, circular, vector-style icon for a bank account.
+      prompt: `You are an expert logo designer for a financial app. Your task is to create a high-quality, circular icon for a bank account.
 
 The account name is: "${accountName}".
 
-First, determine if the account name refers to a well-known financial institution (e.g., a bank, a fintech company like 'Intesa San Paolo', 'Poste Italiane', 'Revolut', 'N26', 'Unicredit').
+Your process is as follows:
 
-- If it IS a known institution: Create an icon that is a simplified, modern, and abstract representation of the institution's official logo. Use its primary brand color for the background and a white icon. The result should be recognizable but not a direct copy. Do not include any text.
+1.  **Analyze the Name**: First, determine if the account name refers to a well-known financial institution (e.g., a bank, a fintech company like 'Intesa San Paolo', 'Poste Italiane', 'Revolut', 'N26', 'Unicredit').
 
-- If it is NOT a known institution (e.g., 'Risparmi per le vacanze', 'Cassa comune', 'Conto principale'): Generate a generic but elegant icon that represents the concept of the account name. Use a pleasant color for the background and a white icon. Do not include any text.
+2.  **Generate the Icon**:
+    *   **If it IS a known institution**: Your primary goal is to generate an image that is a FAITHFUL and ACCURATE reproduction of the institution's official logo. The logo should be centered within a perfect circle. The background color of the circle should be the institution's primary brand color, and the logo itself should be white, or vice-versa, to ensure high contrast and recognizability. The result should look professional and clean.
+    *   **If it is NOT a known institution** (e.g., 'Risparmi per le vacanze', 'Cassa comune', 'Conto principale'): Generate a simple, clean, modern, vector-style icon that represents the concept of the account name. The icon should be white, placed on a pleasant, solid-colored circular background.
 
-The final output must be a single, circular icon.`,
+**CRITICAL DESIGN RULES (APPLY TO ALL ICONS):**
+- **Shape**: The final output MUST be a single, perfect circle.
+- **Borders**: Do NOT add any borders, strokes, or outlines around the circle. The edge should be clean. Avoid any "white borders with different thicknesses" as this is visually disruptive.
+- **Text**: Do NOT include any text in the icon, unless it is part of the official logo itself.
+- **Size**: The icon within the circle should be appropriately sized to fill the space without being cramped.`,
       config: {
         responseModalities: ['TEXT', 'IMAGE'],
       },

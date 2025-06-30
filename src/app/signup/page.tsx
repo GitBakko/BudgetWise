@@ -244,7 +244,7 @@ export default function SignupPage() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button type="button" size="icon" className="h-12 w-12 rounded-full bg-[#1877F2] text-white transition-opacity hover:opacity-80" onClick={() => handleSocialLogin('facebook')} disabled={isLoading}>
-                  {socialLoading === 'facebook' ? <Loader2 className="h-6 w-6 animate-spin" /> : <MetaIcon className="h-8 w-8" />}
+                  {socialLoading === 'facebook' ? <Loader2 className="h-6 w-6 animate-spin" /> : <MetaIcon className="h-10 w-10" />}
                   <span className="sr-only">Continua con Meta</span>
                 </Button>
               </TooltipTrigger>

@@ -19,6 +19,7 @@ type AccountInfo = {
 
 type CategoryInfo = {
     color?: string;
+    icon: string;
 }
 
 export function useTransactionsTable() {
@@ -87,7 +88,7 @@ export function useTransactionsTable() {
         const catsMap = new Map<string, CategoryInfo>();
         snapshot.forEach((doc) => {
             const category = doc.data() as Category;
-            catsMap.set(category.name, { color: category.color });
+            catsMap.set(category.name, { color: category.color, icon: category.icon });
         });
         setCategories(catsMap);
     }));

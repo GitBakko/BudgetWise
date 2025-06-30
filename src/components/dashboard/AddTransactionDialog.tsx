@@ -277,8 +277,12 @@ export function AddTransactionDialog() {
                         <SelectValue>
                            {selectedCategory ? (
                                 <div className="flex items-center gap-2">
-                                    {selectedCategory.color && <div className="h-2 w-2 rounded-full" style={{ backgroundColor: selectedCategory.color }} />}
-                                    <DynamicIcon name={selectedCategory.icon} className="h-4 w-4" />
+                                    <div 
+                                        className="flex h-5 w-5 items-center justify-center rounded-sm text-primary-foreground" 
+                                        style={{ backgroundColor: selectedCategory.color || '#444444' }}
+                                    >
+                                        <DynamicIcon name={selectedCategory.icon} className="h-3 w-3" />
+                                    </div>
                                     <span>{selectedCategory.name}</span>
                                 </div>
                             ) : (
@@ -296,8 +300,12 @@ export function AddTransactionDialog() {
                         availableCategories.map((cat) => (
                             <SelectItem key={cat.id} value={cat.name}>
                               <div className="flex items-center gap-2">
-                                {cat.color && <div className="h-2 w-2 rounded-full" style={{ backgroundColor: cat.color }} />}
-                                <DynamicIcon name={cat.icon} className="h-4 w-4" />
+                                <div 
+                                    className="flex h-5 w-5 items-center justify-center rounded-sm text-primary-foreground"
+                                    style={{ backgroundColor: cat.color || '#444444' }}
+                                >
+                                    <DynamicIcon name={cat.icon} className="h-3 w-3" />
+                                </div>
                                 <span>{cat.name}</span>
                               </div>
                             </SelectItem>

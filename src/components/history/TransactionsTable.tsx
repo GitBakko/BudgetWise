@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
+import DynamicIcon from "@/components/DynamicIcon";
 
 
 export function TransactionsTable() {
@@ -93,12 +94,20 @@ export function TransactionsTable() {
                         </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        {categoryInfo?.color && <div className="h-2 w-2 rounded-full" style={{ backgroundColor: categoryInfo.color }} />}
-                        <Badge variant="outline" className="capitalize">
-                          {transaction.category}
-                        </Badge>
-                      </div>
+                      <Badge variant="outline" className="flex w-fit items-center gap-1.5 p-1 pr-2.5">
+                        <div
+                            className="flex h-5 w-5 items-center justify-center rounded-full text-primary-foreground"
+                            style={{
+                                backgroundColor: categoryInfo?.color || "#444444",
+                            }}
+                            >
+                            <DynamicIcon
+                                name={categoryInfo?.icon || "HelpCircle"}
+                                className="h-3 w-3"
+                            />
+                        </div>
+                        <span className="capitalize">{transaction.category}</span>
+                      </Badge>
                     </TableCell>
                     <TableCell>
                         {new Date(

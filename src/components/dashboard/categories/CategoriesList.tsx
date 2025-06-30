@@ -121,15 +121,15 @@ export function CategoriesList() {
               filteredCategories.map((cat) => (
                 <TableRow key={cat.id}>
                   <TableCell>
-                    <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted">
+                    <div 
+                      className="flex h-8 w-8 items-center justify-center rounded-md text-primary-foreground"
+                      style={{ backgroundColor: cat.color || '#444444' }}
+                    >
                       <DynamicIcon name={cat.icon} className="h-5 w-5" />
                     </div>
                   </TableCell>
                   <TableCell className="font-medium">
-                    <div className="flex items-center gap-2">
-                        {cat.color && <div className="h-2 w-2 rounded-full" style={{ backgroundColor: cat.color }} />}
-                        <span>{cat.name}</span>
-                    </div>
+                    <span>{cat.name}</span>
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>

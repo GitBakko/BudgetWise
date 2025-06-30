@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useState, useEffect, ReactNode } from "react";
@@ -6,6 +7,10 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
+  GoogleAuthProvider,
+  FacebookAuthProvider,
+  OAuthProvider,
+  signInWithPopup,
 } from "firebase/auth";
 import { doc, setDoc, onSnapshot } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
@@ -17,6 +22,11 @@ interface AuthContextType {
   login: (email: string, pass: string) => Promise<any>;
   signup: (email: string, pass: string) => Promise<any>;
   logout: () => Promise<void>;
+  loginWithGoogle: () => Promise<any>;
+  loginWithFacebook: () => Promise<any>;
+  loginWithApple: () => Promise<any>;
+  loginWithMicrosoft: () => Promise<any>;
+  loginWithTwitter: () => Promise<any>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(
@@ -87,12 +97,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return signOut(auth);
   };
 
+  const loginWithGoogle = () => {
+    const provider = new GoogleAuthProvider();
+    return signInWithPopup(auth, provider);
+  };
+
+  const loginWithFacebook = () => {
+    const provider = new FacebookAuthProvider();
+    return signInWithPopup(auth, provider);
+  };
+
+  const loginWithApple = () => {
+    const provider = new OAuthProvider("apple.com");
+    return signInWithPopup(auth, provider);
+  };
+  
+  const loginWithMicrosoft = () => {
+    const provider = new OAuthProvider("microsoft.com");
+    return signInWithPopup(auth, provider);
+  };
+
+  const loginWithTwitter = () => {
+    const provider = new OAuthProvider("twitter.com");
+    return signInWithPopup(auth, provider);
+  };
+
   const value = {
     user,
     loading,
     signup,
     login,
     logout,
+    loginWithGoogle,
+    loginWithFacebook,
+    loginWithApple,
+    loginWithMicrosoft,
+    loginWithTwitter,
   };
 
   return (

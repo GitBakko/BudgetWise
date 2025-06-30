@@ -3,18 +3,18 @@
  * @fileOverview An AI flow to generate an icon for a bank account.
  *
  * - generateAccountIcon - A function that generates an icon based on an account name.
- * - GenerateIconInputSchema - The input type for the generateAccountIcon function.
- * - GenerateIconOutputSchema - The return type for the generateAccountIcon function.
+ * - GenerateIconInput - The input type for the generateAccountIcon function.
+ * - GenerateIconOutput - The return type for the generateAccountIcon function.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-export const GenerateIconInputSchema = z.string();
-export type GenerateIconInput = z.infer<typeof GenerateIconInputSchema>;
+const GenerateIconInputSchema = z.string();
+type GenerateIconInput = z.infer<typeof GenerateIconInputSchema>;
 
-export const GenerateIconOutputSchema = z.string();
-export type GenerateIconOutput = z.infer<typeof GenerateIconOutputSchema>;
+const GenerateIconOutputSchema = z.string();
+type GenerateIconOutput = z.infer<typeof GenerateIconOutputSchema>;
 
 export async function generateAccountIcon(accountName: GenerateIconInput): Promise<GenerateIconOutput> {
   return generateIconFlow(accountName);

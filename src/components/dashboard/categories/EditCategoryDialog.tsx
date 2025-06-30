@@ -28,7 +28,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, ArrowDownCircle, ArrowUpCircle, Sparkles } from "lucide-react";
+import { Loader2, ArrowDownCircle, ArrowUpCircle, Sparkles, Globe } from "lucide-react";
 import { IconPicker } from "./IconPicker";
 import { cn } from "@/lib/utils";
 import { useDebounce } from "use-debounce";
@@ -36,8 +36,9 @@ import { suggestCategoryIcon } from "@/ai/flows/suggestCategoryIcon";
 
 const categorySchema = z.object({
   name: z.string().min(2, { message: "Il nome deve contenere almeno 2 caratteri." }),
-  type: z.enum(["income", "expense"]),
+  type: z.enum(["income", "expense", "general"]),
   icon: z.string().min(1, { message: "Seleziona un'icona." }),
+  color: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof categorySchema>;
@@ -60,6 +61,7 @@ export function EditCategoryDialog({ category, open, onOpenChange }: EditCategor
       name: category.name,
       type: category.type,
       icon: category.icon,
+      color: category.color || "#444444",
     },
   });
 
@@ -73,6 +75,7 @@ export function EditCategoryDialog({ category, open, onOpenChange }: EditCategor
         name: category.name,
         type: category.type,
         icon: category.icon,
+        color: category.color || "#444444",
       });
     }
   }, [category, open, form]);
@@ -105,16 +108,15 @@ export function EditCategoryDialog({ category, open, onOpenChange }: EditCategor
 
     try {
       // Check for duplicate category name if name has changed
-      if (values.name !== category.name || values.type !== category.type) {
+      if (values.name !== category.name) {
           const q = query(
             collection(db, "categories"),
             where("userId", "==", user.uid),
-            where("type", "==", values.type),
             where("name", "==", values.name)
           );
           const querySnapshot = await getDocs(q);
           if (!querySnapshot.empty) {
-            toast({ variant: "destructive", title: "Nome duplicato", description: "Esiste già una categoria con questo nome e tipo." });
+            toast({ variant: "destructive", title: "Nome duplicato", description: "Esiste già una categoria con questo nome." });
             setLoading(false);
             return;
           }
@@ -125,6 +127,7 @@ export function EditCategoryDialog({ category, open, onOpenChange }: EditCategor
         name: values.name,
         type: values.type,
         icon: values.icon,
+        color: values.color,
       });
 
       toast({ title: "Successo!", description: "Categoria aggiornata con successo." });
@@ -154,10 +157,10 @@ export function EditCategoryDialog({ category, open, onOpenChange }: EditCategor
                   <FormControl>
                     <Tabs
                       value={field.value}
-                      onValueChange={(value) => field.onChange(value as "income" | "expense")}
+                      onValueChange={(value) => field.onChange(value as "income" | "expense" | "general")}
                       className="w-full"
                     >
-                      <TabsList className="grid w-full grid-cols-2">
+                      <TabsList className="grid w-full grid-cols-3">
                         <TabsTrigger value="expense" className="data-[state=active]:bg-destructive/10 data-[state=active]:text-destructive">
                            <ArrowDownCircle className="mr-2 h-4 w-4" />
                            Spesa
@@ -166,6 +169,10 @@ export function EditCategoryDialog({ category, open, onOpenChange }: EditCategor
                            <ArrowUpCircle className="mr-2 h-4 w-4" />
                            Entrata
                         </TabsTrigger>
+                        <TabsTrigger value="general" className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
+                           <Globe className="mr-2 h-4 w-4" />
+                           Generale
+                        </TabsTrigger>
                       </TabsList>
                     </Tabs>
                   </FormControl>
@@ -173,19 +180,34 @@ export function EditCategoryDialog({ category, open, onOpenChange }: EditCategor
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome</FormLabel>
-                  <FormControl>
-                    <Input placeholder="es. Spesa Alimentare" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+             <div className="grid grid-cols-3 gap-4">
+                <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                    <FormItem className="col-span-2">
+                    <FormLabel>Nome</FormLabel>
+                    <FormControl>
+                        <Input placeholder="es. Spesa Alimentare" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+                 <FormField
+                    control={form.control}
+                    name="color"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Colore</FormLabel>
+                            <FormControl>
+                                <Input type="color" {...field} className="p-1 h-10"/>
+                            </FormControl>
+                             <FormMessage />
+                        </FormItem>
+                    )}
+                />
+            </div>
             <FormField
               control={form.control}
               name="icon"
@@ -213,7 +235,8 @@ export function EditCategoryDialog({ category, open, onOpenChange }: EditCategor
               className={cn(
                   "w-full",
                   categoryType === 'income' && "bg-success hover:bg-success/90 text-success-foreground",
-                  categoryType === 'expense' && "bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                  categoryType === 'expense' && "bg-destructive hover:bg-destructive/90 text-destructive-foreground",
+                  categoryType === 'general' && "bg-primary hover:bg-primary/90 text-primary-foreground"
               )}
             >
               {loading ? (

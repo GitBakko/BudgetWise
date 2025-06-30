@@ -139,7 +139,7 @@ export function AddTransactionDialog() {
   const selectedAccountId = form.watch("accountId");
   const selectedAccount = accounts.find(a => a.id === selectedAccountId);
 
-  const availableCategories = categories.filter((c) => c.type === activeTab);
+  const availableCategories = categories.filter((c) => c.type === activeTab || c.type === 'general');
   const selectedCategoryName = form.watch("category");
   const selectedCategory = availableCategories.find(c => c.name === selectedCategoryName);
 
@@ -149,7 +149,7 @@ export function AddTransactionDialog() {
         <Button>
           <PlusCircle className="mr-2 h-4 w-4" />
           Aggiungi Transazione
-        </Button>
+        Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
@@ -277,6 +277,7 @@ export function AddTransactionDialog() {
                         <SelectValue>
                            {selectedCategory ? (
                                 <div className="flex items-center gap-2">
+                                    {selectedCategory.color && <div className="h-2 w-2 rounded-full" style={{ backgroundColor: selectedCategory.color }} />}
                                     <DynamicIcon name={selectedCategory.icon} className="h-4 w-4" />
                                     <span>{selectedCategory.name}</span>
                                 </div>
@@ -295,6 +296,7 @@ export function AddTransactionDialog() {
                         availableCategories.map((cat) => (
                             <SelectItem key={cat.id} value={cat.name}>
                               <div className="flex items-center gap-2">
+                                {cat.color && <div className="h-2 w-2 rounded-full" style={{ backgroundColor: cat.color }} />}
                                 <DynamicIcon name={cat.icon} className="h-4 w-4" />
                                 <span>{cat.name}</span>
                               </div>

@@ -10,7 +10,7 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-const iconList = [ "ShoppingCart", "Home", "Car", "UtensilsCrossed", "Film", "Plane", "HeartPulse", "Gift", "BookOpen", "Briefcase", "GraduationCap", "PawPrint", "Landmark", "DollarSign", "Receipt", "Bus", "Train", "Bike", "Fuel", "Shirt", "Apple", "Pizza", "Coffee", "Gamepad2", "Laptop", "Phone", "Music", "Heart", "Star", "Cloud", "Sun", "Moon", "Droplets", "Bone", "Dog", "Cat", "Hammer", "Wrench", "Construction", "Baby" ];
+const iconList = [ "ShoppingCart", "Home", "Car", "UtensilsCrossed", "Film", "Plane", "HeartPulse", "Gift", "BookOpen", "Briefcase", "GraduationCap", "PawPrint", "Landmark", "DollarSign", "Receipt", "Bus", "Train", "Bike", "Fuel", "Shirt", "Apple", "Pizza", "Coffee", "Gamepad2", "Laptop", "Phone", "Music", "Heart", "Star", "Cloud", "Sun", "Moon", "Droplets", "Bone", "Dog", "Cat", "Hammer", "Wrench", "Construction", "Baby", "HelpCircle" ];
 
 const SuggestCategoryIconInputSchema = z.string();
 export type SuggestCategoryIconInput = z.infer<typeof SuggestCategoryIconInputSchema>;

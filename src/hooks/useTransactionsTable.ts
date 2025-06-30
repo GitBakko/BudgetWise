@@ -1,8 +1,9 @@
+
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import type { Transaction, Account } from "@/types";
+import type { Transaction, Account, Category } from "@/types";
 import {
   collection,
   query,
@@ -16,10 +17,15 @@ type AccountInfo = {
     color?: string;
 }
 
+type CategoryInfo = {
+    color?: string;
+}
+
 export function useTransactionsTable() {
   const { user } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [accounts, setAccounts] = useState<Map<string, AccountInfo>>(new Map());
+  const [categories, setCategories] = useState<Map<string, CategoryInfo>>(new Map());
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<"all" | "income" | "expense">(
@@ -32,11 +38,13 @@ export function useTransactionsTable() {
       return;
     }
 
+    const unsubs: (()=>void)[] = [];
+
     const transQuery = query(
       collection(db, "transactions"),
       where("userId", "==", user.uid)
     );
-    const unsubTransactions = onSnapshot(
+    unsubs.push(onSnapshot(
       transQuery,
       (querySnapshot) => {
         const transactionsData: Transaction[] = [];
@@ -56,24 +64,36 @@ export function useTransactionsTable() {
         console.error("Error fetching transactions:", error);
         setLoading(false);
       }
-    );
+    ));
 
     const accQuery = query(
       collection(db, "accounts"),
       where("userId", "==", user.uid)
     );
-    const unsubAccounts = onSnapshot(accQuery, (snapshot) => {
+    unsubs.push(onSnapshot(accQuery, (snapshot) => {
       const accsMap = new Map<string, AccountInfo>();
       snapshot.forEach((doc) => {
         const account = doc.data() as Omit<Account, 'id'>;
         accsMap.set(doc.id, {name: account.name, color: account.color});
       });
       setAccounts(accsMap);
-    });
+    }));
+    
+    const catQuery = query(
+      collection(db, "categories"),
+      where("userId", "==", user.uid)
+    );
+    unsubs.push(onSnapshot(catQuery, (snapshot) => {
+        const catsMap = new Map<string, CategoryInfo>();
+        snapshot.forEach((doc) => {
+            const category = doc.data() as Category;
+            catsMap.set(category.name, { color: category.color });
+        });
+        setCategories(catsMap);
+    }));
 
     return () => {
-      unsubTransactions();
-      unsubAccounts();
+      unsubs.forEach(unsub => unsub());
     };
   }, [user]);
 
@@ -91,6 +111,7 @@ export function useTransactionsTable() {
     loading,
     filteredTransactions,
     accounts,
+    categories,
     searchTerm,
     setSearchTerm,
     filterType,

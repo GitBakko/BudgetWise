@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useTransactionsTable } from "@/hooks/useTransactionsTable";
@@ -27,6 +28,7 @@ export function TransactionsTable() {
     loading,
     filteredTransactions,
     accounts,
+    categories,
     searchTerm,
     setSearchTerm,
     filterType,
@@ -78,6 +80,7 @@ export function TransactionsTable() {
             {filteredTransactions.length > 0 ? (
               filteredTransactions.map((transaction) => {
                 const accountInfo = accounts.get(transaction.accountId);
+                const categoryInfo = categories.get(transaction.category);
                 return (
                     <TableRow key={transaction.id}>
                     <TableCell className="font-medium">
@@ -90,9 +93,12 @@ export function TransactionsTable() {
                         </div>
                     </TableCell>
                     <TableCell>
+                      <div className="flex items-center gap-2">
+                        {categoryInfo?.color && <div className="h-2 w-2 rounded-full" style={{ backgroundColor: categoryInfo.color }} />}
                         <Badge variant="outline" className="capitalize">
-                        {transaction.category}
+                          {transaction.category}
                         </Badge>
+                      </div>
                     </TableCell>
                     <TableCell>
                         {new Date(

@@ -34,8 +34,9 @@ export type Category = {
   id: string;
   userId: string;
   name: string;
-  type: "income" | "expense";
+  type: "income" | "expense" | "general";
   icon: string;
+  color?: string;
   createdAt: Timestamp;
 };
 

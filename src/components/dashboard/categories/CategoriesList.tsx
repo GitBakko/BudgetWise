@@ -21,7 +21,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import DynamicIcon from "@/components/DynamicIcon";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Edit, Trash2, ArrowDownCircle, ArrowUpCircle } from "lucide-react";
+import { MoreHorizontal, Edit, Trash2, ArrowDownCircle, ArrowUpCircle, PlusCircle } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { EditCategoryDialog } from "./EditCategoryDialog";
 import { DeleteCategoryDialog } from "./DeleteCategoryDialog";
+import { AddCategoryDialog } from "./AddCategoryDialog";
 import type { Category } from "@/types";
 import {
   collection,
@@ -50,6 +51,10 @@ export function CategoriesList() {
   const [deletingCategory, setDeletingCategory] = useState<Category | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
+  
+  const [activeTab, setActiveTab] = useState<'expense' | 'income'>('expense');
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+
 
   const handleDelete = async () => {
     if (!deletingCategory || !user) return;
@@ -89,7 +94,7 @@ export function CategoriesList() {
   };
 
   const renderTable = (type: "expense" | "income") => {
-    const filteredCategories = categories.filter((c) => c.type === type);
+    const filteredCategories = categories.filter((c) => c.type === type || c.type === 'general');
 
     if (loading) {
       return (
@@ -120,7 +125,12 @@ export function CategoriesList() {
                       <DynamicIcon name={cat.icon} className="h-5 w-5" />
                     </div>
                   </TableCell>
-                  <TableCell className="font-medium">{cat.name}</TableCell>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                        {cat.color && <div className="h-2 w-2 rounded-full" style={{ backgroundColor: cat.color }} />}
+                        <span>{cat.name}</span>
+                    </div>
+                  </TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -163,26 +173,46 @@ export function CategoriesList() {
 
   return (
     <>
-      <Tabs defaultValue="expense" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="expense" className="data-[state=active]:bg-destructive/10 data-[state=active]:text-destructive">
-             <ArrowDownCircle className="mr-2 h-4 w-4" />
-             Spese
-            </TabsTrigger>
-          <TabsTrigger value="income" className="data-[state=active]:bg-success/10 data-[state=active]:text-success">
-             <ArrowUpCircle className="mr-2 h-4 w-4" />
-             Entrate
-            </TabsTrigger>
-        </TabsList>
-        <Card className="mt-4">
-            <TabsContent value="expense" className="m-0">
-              {renderTable("expense")}
-            </TabsContent>
-            <TabsContent value="income" className="m-0">
-              {renderTable("income")}
-            </TabsContent>
-        </Card>
-      </Tabs>
+      <div className="space-y-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+            <h1 className="text-3xl font-bold tracking-tight">Gestione Categorie</h1>
+            <p className="text-muted-foreground">
+                Crea, modifica ed elimina le tue categorie di spesa e entrata.
+            </p>
+            </div>
+            <Button onClick={() => setIsAddDialogOpen(true)}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Aggiungi Categoria
+            </Button>
+        </div>
+        <Tabs defaultValue="expense" className="w-full" onValueChange={(value) => setActiveTab(value as 'expense' | 'income')}>
+            <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="expense" className="data-[state=active]:bg-destructive/10 data-[state=active]:text-destructive">
+                <ArrowDownCircle className="mr-2 h-4 w-4" />
+                Spese
+                </TabsTrigger>
+            <TabsTrigger value="income" className="data-[state=active]:bg-success/10 data-[state=active]:text-success">
+                <ArrowUpCircle className="mr-2 h-4 w-4" />
+                Entrate
+                </TabsTrigger>
+            </TabsList>
+            <Card className="mt-4">
+                <TabsContent value="expense" className="m-0">
+                {renderTable("expense")}
+                </TabsContent>
+                <TabsContent value="income" className="m-0">
+                {renderTable("income")}
+                </TabsContent>
+            </Card>
+        </Tabs>
+      </div>
+
+      <AddCategoryDialog 
+        open={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
+        initialType={activeTab}
+      />
 
       {editingCategory && (
         <EditCategoryDialog

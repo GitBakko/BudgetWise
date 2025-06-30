@@ -10,6 +10,7 @@ import { startOfMonth, endOfMonth } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowDownLeft, ArrowUpRight, PiggyBank } from "lucide-react";
+import { calculateAllAccountsCurrentBalance } from "@/lib/balanceCalculations";
 
 export function SummaryCards() {
   const { user } = useAuth();
@@ -32,7 +33,7 @@ export function SummaryCards() {
     let allAccounts: Account[] = [];
     let allSnapshots: BalanceSnapshot[] = [];
 
-    let dataLoaded = { transactions: false, accounts: false, snapshots: false };
+    const dataLoaded = { transactions: false, accounts: false, snapshots: false };
 
     const calculateSummary = () => {
       if (!user || !dataLoaded.transactions || !dataLoaded.accounts || !dataLoaded.snapshots) return;
@@ -54,34 +55,8 @@ export function SummaryCards() {
         }
       });
       
-      const calculateCurrentBalance = (account: Account) => {
-        const accountTransactions = allTransactions.filter(t => t.accountId === account.id);
-        const accountSnapshots = allSnapshots
-            .filter(s => s.accountId === account.id)
-            .sort((a, b) => b.date.seconds - a.date.seconds);
-
-        let referenceDate = account.balanceStartDate || account.createdAt;
-        let referenceBalance = account.initialBalance;
-        
-        // Find the latest snapshot that is ON or AFTER the balance start date.
-        const latestApplicableSnapshot = accountSnapshots.find(s => s.date.seconds >= referenceDate.seconds);
-
-        if (latestApplicableSnapshot) {
-            referenceDate = latestApplicableSnapshot.date;
-            referenceBalance = latestApplicableSnapshot.balance;
-        }
-
-        const balanceChange = accountTransactions
-            .filter(t => t.date.seconds > referenceDate.seconds)
-            .reduce((acc, t) => {
-                return t.type === 'income' ? acc + t.amount : acc - t.amount;
-            }, 0);
-
-        return referenceBalance + balanceChange;
-      };
-
-      const totalBalance = allAccounts.reduce((sum, acc) => sum + calculateCurrentBalance(acc), 0);
-
+      const totalBalance = calculateAllAccountsCurrentBalance(allAccounts, allTransactions, allSnapshots);
+      
       setSummary({ monthlyIncome, monthlyExpense, totalBalance });
       setLoading(false);
     };

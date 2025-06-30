@@ -5,59 +5,16 @@ import { useAuth } from "@/hooks/useAuth";
 import type { Transaction, BalanceSnapshot, Account } from "@/types";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { 
-  startOfDay, 
-  format, 
-  isAfter,
-  isBefore,
-  differenceInDays,
-  subDays,
-  addDays,
-  startOfMonth,
-  addMonths,
-  startOfQuarter,
-  addQuarters,
-  startOfYear,
-  addYears
-} from "date-fns";
+import { startOfDay, format, isAfter, isBefore } from "date-fns";
 import { it } from "date-fns/locale";
 import { AreaChart, Area, XAxis, YAxis, Tooltip } from 'recharts';
 import { ChartContainer, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { getChartTimeSettings, calculateBalanceOnDate } from "@/lib/balanceCalculations";
 
 interface AccountTrendChartProps {
     account: Account;
 }
-
-const getChartTimeSettings = (oldestDate: Date, newestDate: Date) => {
-    const daysDiff = differenceInDays(newestDate, oldestDate);
-
-    if (daysDiff <= 60) { // Up to 2 months -> daily
-        return {
-            startDate: subDays(newestDate, Math.max(daysDiff, 29)), // Show at least 30 days
-            increment: (d: Date) => addDays(d, 1),
-            format: "d MMM"
-        };
-    } else if (daysDiff <= 365 * 1.5) { // Up to 1.5 years -> monthly
-        return {
-            startDate: startOfMonth(oldestDate),
-            increment: (d: Date) => addMonths(d, 1),
-            format: "MMM yy"
-        };
-    } else if (daysDiff <= 365 * 3) { // Up to 3 years -> quarterly
-        return {
-            startDate: startOfQuarter(oldestDate),
-            increment: (d: Date) => addQuarters(d, 1),
-            format: (d: Date) => `Q${Math.floor((d.getMonth() + 3) / 3)} '${format(d, 'yy')}`
-        };
-    } else { // More than 3 years -> yearly
-        return {
-            startDate: startOfYear(oldestDate),
-            increment: (d: Date) => addYears(d, 1),
-            format: "yyyy"
-        };
-    }
-};
 
 export function AccountTrendChart({ account }: AccountTrendChartProps) {
     const { user } = useAuth();
@@ -81,44 +38,14 @@ export function AccountTrendChart({ account }: AccountTrendChartProps) {
         
         let accountTransactions: Transaction[] = [];
         let accountSnapshots: BalanceSnapshot[] = [];
-        let dataLoaded = { transactions: false, snapshots: false };
+        const dataLoaded = { transactions: false, snapshots: false };
 
-        const calculateData = () => {
+        const generateData = () => {
             if (!user || !dataLoaded.transactions || !dataLoaded.snapshots) return;
 
-            const accountStartDate = (account.balanceStartDate || account.createdAt).toDate();
-
-            const calculateBalanceOnDate = (date: Date) => {
-                if (isBefore(date, accountStartDate)) {
-                    return 0;
-                }
-
-                const priorSnapshots = accountSnapshots
-                    .filter(s => !isAfter(s.date.toDate(), date))
-                    .sort((a, b) => b.date.seconds - a.date.seconds);
-
-                let referenceBalance = account.initialBalance;
-                let referenceDate = accountStartDate;
-
-                const latestApplicableSnapshot = priorSnapshots.find(s => !isBefore(s.date.toDate(), referenceDate));
-
-                if (latestApplicableSnapshot) {
-                    referenceBalance = latestApplicableSnapshot.balance;
-                    referenceDate = latestApplicableSnapshot.date.toDate();
-                }
-                
-                const balanceChange = accountTransactions
-                    .filter(t => isAfter(t.date.toDate(), referenceDate) && !isAfter(t.date.toDate(), date))
-                    .reduce((acc, t) => {
-                        return t.type === 'income' ? acc + t.amount : acc - t.amount;
-                    }, 0);
-                
-                return referenceBalance + balanceChange;
-            };
-            
             const today = startOfDay(new Date());
             
-            let oldestDate = startOfDay(accountStartDate);
+            let oldestDate = startOfDay((account.balanceStartDate || account.createdAt).toDate());
             if (accountSnapshots.length > 0) {
                 const oldestSnapshotDate = accountSnapshots.reduce((oldest, s) => {
                     const sDate = s.date.toDate();
@@ -136,7 +63,10 @@ export function AccountTrendChart({ account }: AccountTrendChartProps) {
             let currentDate = settings.startDate;
 
             while (!isAfter(currentDate, today)) {
-                const balance = calculateBalanceOnDate(currentDate);
+                // We pass all transactions and snapshots and let the function filter internally
+                // This is a slight simplification from passing pre-filtered arrays, assuming the performance is acceptable.
+                // For a large dataset, pre-filtering would be better.
+                const balance = calculateBalanceOnDate(account, currentDate, accountTransactions, accountSnapshots);
                 data.push({
                     date: typeof settings.format === 'function' ? settings.format(currentDate) : format(currentDate, settings.format, { locale: it }),
                     [account.name]: parseFloat(balance.toFixed(2)),
@@ -152,14 +82,14 @@ export function AccountTrendChart({ account }: AccountTrendChartProps) {
         unsubscribers.push(onSnapshot(transQuery, (snapshot) => {
             accountTransactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Transaction));
             dataLoaded.transactions = true;
-            calculateData();
+            generateData();
         }));
 
         const snapQuery = query(collection(db, "balanceSnapshots"), where("userId", "==", user.uid), where("accountId", "==", account.id));
         unsubscribers.push(onSnapshot(snapQuery, (snapshot) => {
             accountSnapshots = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BalanceSnapshot));
             dataLoaded.snapshots = true;
-            calculateData();
+            generateData();
         }));
 
         return () => {

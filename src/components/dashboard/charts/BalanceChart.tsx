@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import type { Transaction, Account, BalanceSnapshot } from "@/types";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
@@ -11,12 +11,14 @@ import { it } from "date-fns/locale";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import { TrendingUp } from "lucide-react";
+import { ChartContainer, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 
 export function BalanceChart() {
   const { user } = useAuth();
   const [chartData, setChartData] = useState<any[]>([]);
+  const [chartConfig, setChartConfig] = useState<ChartConfig | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -36,47 +38,72 @@ export function BalanceChart() {
     const calculateData = () => {
       if (!user || !dataLoaded.transactions || !dataLoaded.accounts || !dataLoaded.snapshots) return;
       
-      const calculateTotalBalanceOnDate = (date: Date) => {
-        let totalBalance = 0;
+      // Setup Chart Config
+      const config: ChartConfig = {
+        "Saldo Totale": {
+          label: "Saldo Totale",
+          color: "hsl(var(--primary))",
+        },
+      };
+      const accountColors = [
+          "hsl(var(--chart-1))",
+          "hsl(var(--chart-2))",
+          "hsl(var(--chart-3))",
+          "hsl(var(--chart-4))",
+          "hsl(var(--chart-5))",
+      ];
+      allAccounts.forEach((account, index) => {
+        config[account.name] = {
+          label: account.name,
+          color: accountColors[index % accountColors.length],
+        };
+      });
+      setChartConfig(config);
 
-        for (const account of allAccounts) {
-            const accountTransactions = allTransactions
-                .filter(t => t.accountId === account.id && t.date.toDate() <= date);
-            
-            const accountSnapshots = allSnapshots
-                .filter(s => s.accountId === account.id && s.date.toDate() <= date)
-                .sort((a, b) => b.date.seconds - a.date.seconds);
+      const calculateAccountBalanceOnDate = (account: Account, date: Date, transactions: Transaction[], snapshots: BalanceSnapshot[]) => {
+          const accountTransactions = transactions
+              .filter(t => t.accountId === account.id && t.date.toDate() <= date);
+          
+          const accountSnapshots = snapshots
+              .filter(s => s.accountId === account.id && s.date.toDate() <= date)
+              .sort((a, b) => b.date.seconds - a.date.seconds);
 
-            let startingBalance = account.initialBalance;
-            let startingDate = account.createdAt.toDate();
+          let startingBalance = account.initialBalance;
+          let startingDate = account.createdAt.toDate();
 
-            if (accountSnapshots.length > 0) {
-                startingBalance = accountSnapshots[0].balance;
-                startingDate = accountSnapshots[0].date.toDate();
-            }
+          if (accountSnapshots.length > 0) {
+              startingBalance = accountSnapshots[0].balance;
+              startingDate = accountSnapshots[0].date.toDate();
+          }
 
-            const balanceChange = accountTransactions
-                .filter(t => t.date.toDate() > startingDate)
-                .reduce((acc, t) => {
-                    return t.type === 'income' ? acc + t.amount : acc - t.amount;
-                }, 0);
-            
-            totalBalance += startingBalance + balanceChange;
-        }
-        return totalBalance;
+          const balanceChange = accountTransactions
+              .filter(t => t.date.toDate() > startingDate)
+              .reduce((acc, t) => {
+                  return t.type === 'income' ? acc + t.amount : acc - t.amount;
+              }, 0);
+          
+          return startingBalance + balanceChange;
       };
 
       const data = [];
       const today = startOfDay(new Date());
       for (let i = 29; i >= 0; i--) {
         const date = subDays(today, i);
-        const dayBalance = calculateTotalBalanceOnDate(date);
-        data.push({
-          name: format(date, "d MMM", {locale: it}),
-          Saldo: dayBalance,
-        });
-      }
+        const dayData: { [key: string]: any } = {
+          date: format(date, "d MMM", { locale: it }),
+        };
 
+        let totalBalance = 0;
+        for (const account of allAccounts) {
+            const balance = calculateAccountBalanceOnDate(account, date, allTransactions, allSnapshots);
+            dayData[account.name] = parseFloat(balance.toFixed(2));
+            totalBalance += balance;
+        }
+        dayData["Saldo Totale"] = parseFloat(totalBalance.toFixed(2));
+        
+        data.push(dayData);
+      }
+      
       setChartData(data);
       setLoading(false);
     };
@@ -107,50 +134,67 @@ export function BalanceChart() {
     };
   }, [user]);
 
-  if (loading) {
+  if (loading || !chartConfig) {
     return <Skeleton className="w-full h-80" />;
   }
   
-  const formatYAxis = (tick: number) => `€${tick}`;
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="p-2 text-sm bg-background/80 backdrop-blur-sm border rounded-lg shadow-lg">
-          <p className="font-bold">{label}</p>
-          <p className="text-primary">{`Saldo: €${payload[0].value.toFixed(2)}`}</p>
-        </div>
-      );
-    }
-    return null;
-  };
-
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center gap-2">
             <TrendingUp className="h-6 w-6 text-primary" />
-            <CardTitle>Andamento Saldo Totale</CardTitle>
+            <CardTitle>Andamento Saldi</CardTitle>
         </div>
         <CardDescription>
-          Variazione del saldo totale negli ultimi 30 giorni.
+          Variazione dei saldi negli ultimi 30 giorni. Clicca sulla legenda per mostrare/nascondere le linee.
         </CardDescription>
       </CardHeader>
-      <CardContent className="h-80 w-full pr-6">
-        <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData} margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
-                <defs>
-                    <linearGradient id="colorSaldo" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
-                    </linearGradient>
-                </defs>
+      <CardContent className="h-96 w-full p-0 pr-2">
+        <ChartContainer config={chartConfig} className="h-full w-full">
+            <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 30, bottom: 0 }}>
+                 {Object.keys(chartConfig).map((key) => (
+                    <defs key={`def-${key}`}>
+                        <linearGradient id={`fill-${key.replace(/\s/g, '')}`} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={chartConfig[key].color} stopOpacity={0.8} />
+                        <stop offset="95%" stopColor={chartConfig[key].color} stopOpacity={0.1} />
+                        </linearGradient>
+                    </defs>
+                 ))}
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                <XAxis dataKey="name" tickLine={false} axisLine={false} tickMargin={10} fontSize={12} />
-                <YAxis tickFormatter={formatYAxis} tickLine={false} axisLine={false} tickMargin={10} fontSize={12} />
-                <Tooltip content={<CustomTooltip />} cursor={{fill: 'hsl(var(--accent))', fillOpacity: 0.1}} />
-                <Area type="monotone" dataKey="Saldo" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorSaldo)" strokeWidth={2} />
+                <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={10} fontSize={12} />
+                <YAxis tickFormatter={(tick) => `€${tick.toLocaleString('it-IT')}`} tickLine={false} axisLine={false} tickMargin={10} fontSize={12} width={80} />
+                <Tooltip
+                    content={<ChartTooltipContent 
+                      indicator="line"
+                      formatter={(value, name) => (
+                        <div className="flex items-center gap-2">
+                           <div className="w-2.5 h-2.5 rounded-full" style={{backgroundColor: chartConfig[name as string]?.color}}/>
+                           <div className="flex justify-between w-full">
+                            <span>{name}</span>
+                            <span className="font-bold ml-4">€{typeof value === 'number' ? value.toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : value}</span>
+                           </div>
+                        </div>
+                      )}
+                    />}
+                />
+                <Legend verticalAlign="top" wrapperStyle={{paddingBottom: '20px'}} />
+                {Object.keys(chartConfig).map((key) => {
+                    const isTotal = key === "Saldo Totale";
+                    return (
+                        <Area
+                            key={key}
+                            dataKey={key}
+                            type="monotone"
+                            stroke={chartConfig[key].color}
+                            fill={`url(#fill-${key.replace(/\s/g, '')})`}
+                            strokeWidth={isTotal ? 2.5 : 1.5}
+                            strokeDasharray={isTotal ? "0" : "5 5"}
+                            dot={false}
+                        />
+                    )
+                })}
             </AreaChart>
-        </ResponsiveContainer>
+        </ChartContainer>
       </CardContent>
     </Card>
   );

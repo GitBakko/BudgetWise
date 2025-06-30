@@ -24,6 +24,7 @@ import {
   SidebarTrigger,
   SidebarFooter,
 } from "@/components/ui/sidebar";
+import { cn } from "@/lib/utils";
 
 export default function DashboardLayout({
   children,
@@ -55,6 +56,7 @@ export default function DashboardLayout({
       href: "/dashboard/ai-advisor",
       label: "Consulente AI",
       icon: BrainCircuit,
+      isAi: true,
     },
   ];
 
@@ -86,7 +88,7 @@ export default function DashboardLayout({
                       }}
                     >
                       <Link href={item.href}>
-                        <item.icon />
+                        <item.icon className={cn(item.isAi && "text-[hsl(var(--ai-primary))]")} />
                         <span>{item.label}</span>
                       </Link>
                     </SidebarMenuButton>

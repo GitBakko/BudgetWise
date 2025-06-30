@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -5,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import type { Transaction } from "@/types";
 import { collection, query, where, onSnapshot, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { startOfMonth, endOfMonth, subYears, startOfDay, format, eachDayOfInterval } from "date-fns";
+import { startOfMonth, endOfMonth, subYears, startOfDay, format, eachDayOfInterval, eachMonthOfInterval, getDaysInMonth } from "date-fns";
 import { it } from "date-fns/locale";
 
 export function useTransactionsSummary(timeframe: 'month' | 'year') {
@@ -23,7 +24,7 @@ export function useTransactionsSummary(timeframe: 'month' | 'year') {
         setLoading(true);
 
         const now = new Date();
-        const startDate = timeframe === 'month' ? startOfMonth(now) : subYears(now, 1);
+        const startDate = timeframe === 'month' ? startOfMonth(now) : startOfMonth(subYears(now, 1));
         const endDate = now;
 
         const q = query(
@@ -49,39 +50,78 @@ export function useTransactionsSummary(timeframe: 'month' | 'year') {
             }, { totalIncome: 0, totalExpense: 0 });
             setSummary(totals);
 
-            const dailyAggregates: { [key: string]: { income: number; expense: number } } = {};
-            
-            const intervalDays = eachDayOfInterval({ start: startDate, end: endDate });
-            intervalDays.forEach(day => {
-                const dayKey = format(day, "yyyy-MM-dd");
-                dailyAggregates[dayKey] = { income: 0, expense: 0 };
-            });
+            if(timeframe === 'month') {
+                const dailyAggregates: { [key: string]: { income: number; expense: number } } = {};
+                const intervalDays = eachDayOfInterval({ start: startDate, end: endOfMonth(now) });
 
-            transactions.forEach(t => {
-                const dayKey = format(startOfDay(t.date.toDate()), "yyyy-MM-dd");
-                if (dailyAggregates[dayKey]) {
-                     if (t.type === 'income') {
-                        dailyAggregates[dayKey].income += t.amount;
-                    } else {
-                        dailyAggregates[dayKey].expense += t.amount;
+                intervalDays.forEach(day => {
+                    const dayKey = format(day, "yyyy-MM-dd");
+                    dailyAggregates[dayKey] = { income: 0, expense: 0 };
+                });
+
+                transactions.forEach(t => {
+                    const dayKey = format(startOfDay(t.date.toDate()), "yyyy-MM-dd");
+                    if (dailyAggregates[dayKey]) {
+                        if (t.type === 'income') {
+                            dailyAggregates[dayKey].income += t.amount;
+                        } else {
+                            dailyAggregates[dayKey].expense += t.amount;
+                        }
                     }
-                }
-            });
+                });
 
-            const sortedChartData = Object.entries(dailyAggregates)
-                .map(([day, values]) => ({
-                    dateObj: new Date(day),
-                    income: parseFloat(values.income.toFixed(2)),
-                    expense: parseFloat(values.expense.toFixed(2)),
-                }))
-                .sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime())
-                .map(item => ({
-                    date: format(item.dateObj, timeframe === 'month' ? "d" : "d MMM", { locale: it }),
-                    Entrate: item.income,
-                    Spese: item.expense
-                }));
+                const sortedChartData = Object.entries(dailyAggregates)
+                    .map(([day, values]) => ({
+                        dateObj: new Date(day),
+                        income: parseFloat(values.income.toFixed(2)),
+                        expense: parseFloat(values.expense.toFixed(2)),
+                    }))
+                    .sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime())
+                     .filter(item => item.dateObj <= endOfMonth(now))
+                    .map(item => ({
+                        date: format(item.dateObj, "d", { locale: it }),
+                        Entrate: item.income,
+                        Spese: item.expense
+                    }));
+                
+                setChartData(sortedChartData);
 
-            setChartData(sortedChartData);
+            } else { // timeframe === 'year'
+                const monthlyAggregates: { [key: string]: { income: number; expense: number } } = {};
+                const intervalMonths = eachMonthOfInterval({ start: startDate, end: endDate });
+
+                intervalMonths.forEach(month => {
+                    const monthKey = format(month, "yyyy-MM");
+                    monthlyAggregates[monthKey] = { income: 0, expense: 0 };
+                });
+
+                transactions.forEach(t => {
+                    const monthKey = format(t.date.toDate(), "yyyy-MM");
+                    if (monthlyAggregates[monthKey]) {
+                         if (t.type === 'income') {
+                            monthlyAggregates[monthKey].income += t.amount;
+                        } else {
+                            monthlyAggregates[monthKey].expense += t.amount;
+                        }
+                    }
+                });
+
+                const sortedChartData = Object.entries(monthlyAggregates)
+                     .map(([month, values]) => ({
+                        dateObj: new Date(month + '-01'),
+                        income: parseFloat(values.income.toFixed(2)),
+                        expense: parseFloat(values.expense.toFixed(2)),
+                    }))
+                    .sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime())
+                    .map(item => ({
+                        date: format(item.dateObj, "MMM", { locale: it }),
+                        Entrate: item.income,
+                        Spese: item.expense
+                    }));
+                
+                setChartData(sortedChartData);
+            }
+
             setLoading(false);
         }, (error) => {
             console.error("Error fetching transactions summary:", error);

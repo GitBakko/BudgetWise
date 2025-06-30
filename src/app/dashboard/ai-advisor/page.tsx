@@ -6,7 +6,7 @@ export default function AiAdvisorPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Consulente AI per il Risparmio</h1>
+        <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-[hsl(var(--ai-gradient-from))] to-[hsl(var(--ai-gradient-to))] bg-clip-text text-transparent">Consulente AI per il Risparmio</h1>
         <p className="text-muted-foreground">
           Lascia che la nostra AI analizzi le tue spese e trovi modi per risparmiare.
         </p>

@@ -39,6 +39,10 @@
     --sidebar-accent-foreground: 169 88% 38%;
     --sidebar-border: 0 0% 88%;
     --sidebar-ring: 169 88% 38%;
+    --ai-primary: 259 94% 66%;
+    --ai-primary-foreground: 0 0% 100%;
+    --ai-gradient-from: 259 94% 66%;
+    --ai-gradient-to: 330 81% 60%;
   }
   .dark {
     --background: 0 0% 10%;
@@ -75,6 +79,10 @@
     --sidebar-accent-foreground: 0 0% 95%;
     --sidebar-border: 0 0% 23%;
     --sidebar-ring: 169 88% 58%;
+    --ai-primary: 259 94% 70%;
+    --ai-primary-foreground: 0 0% 100%;
+    --ai-gradient-from: 259 94% 70%;
+    --ai-gradient-to: 330 81% 65%;
   }
 }
 

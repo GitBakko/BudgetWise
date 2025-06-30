@@ -7,7 +7,6 @@ import {
   collection,
   query,
   where,
-  orderBy,
   onSnapshot,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -49,8 +48,7 @@ export function TransactionsTable() {
 
     const q = query(
       collection(db, "transactions"),
-      where("userId", "==", user.uid),
-      orderBy("date", "desc")
+      where("userId", "==", user.uid)
     );
 
     const unsubscribe = onSnapshot(
@@ -63,6 +61,9 @@ export function TransactionsTable() {
             ...doc.data(),
           } as Transaction);
         });
+        
+        transactionsData.sort((a, b) => b.date.seconds - a.date.seconds);
+
         setTransactions(transactionsData);
         setLoading(false);
       },

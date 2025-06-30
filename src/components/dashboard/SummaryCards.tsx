@@ -6,6 +6,7 @@ import type { Transaction } from "@/types";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { startOfMonth, endOfMonth } from "date-fns";
+import type { Timestamp } from "firebase/firestore";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -26,29 +27,31 @@ export function SummaryCards() {
       return;
     }
 
-    const today = new Date();
-    const startDate = startOfMonth(today);
-    const endDate = endOfMonth(today);
-
     const q = query(
       collection(db, "transactions"),
-      where("userId", "==", user.uid),
-      where("date", ">=", startDate),
-      where("date", "<=", endDate)
+      where("userId", "==", user.uid)
     );
 
     const unsubscribe = onSnapshot(
       q,
       (querySnapshot) => {
+        const today = new Date();
+        const startDate = startOfMonth(today);
+        const endDate = endOfMonth(today);
+
         let income = 0;
         let expense = 0;
 
         querySnapshot.forEach((doc) => {
-          const transaction = doc.data() as Transaction;
-          if (transaction.type === "income") {
-            income += transaction.amount;
-          } else {
-            expense += transaction.amount;
+          const transaction = doc.data() as Omit<Transaction, 'id' | 'date'> & { date: Timestamp };
+          const transactionDate = transaction.date.toDate();
+
+          if (transactionDate >= startDate && transactionDate <= endDate) {
+            if (transaction.type === "income") {
+              income += transaction.amount;
+            } else {
+              expense += transaction.amount;
+            }
           }
         });
 

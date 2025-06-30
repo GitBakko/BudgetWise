@@ -7,8 +7,6 @@ import {
   collection,
   query,
   where,
-  orderBy,
-  limit,
   onSnapshot,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -47,9 +45,7 @@ export function RecentTransactions() {
 
     const q = query(
       collection(db, "transactions"),
-      where("userId", "==", user.uid),
-      orderBy("date", "desc"),
-      limit(5)
+      where("userId", "==", user.uid)
     );
 
     const unsubscribe = onSnapshot(
@@ -62,7 +58,10 @@ export function RecentTransactions() {
             ...doc.data(),
           } as Transaction);
         });
-        setTransactions(transactionsData);
+        
+        transactionsData.sort((a, b) => b.date.seconds - a.date.seconds);
+        
+        setTransactions(transactionsData.slice(0, 5));
         setLoading(false);
       },
       (error) => {

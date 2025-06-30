@@ -43,7 +43,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Calendar as CalendarIcon, PlusCircle, ArrowDownCircle, ArrowUpCircle } from "lucide-react";
+import { Calendar as CalendarIcon, PlusCircle, ArrowDownCircle, ArrowUpCircle, Landmark } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -51,6 +51,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { it } from "date-fns/locale";
 import DynamicIcon from "@/components/DynamicIcon";
 import { Skeleton } from "../ui/skeleton";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 const transactionSchema = z.object({
   type: z.enum(["income", "expense"]),
@@ -217,9 +218,17 @@ export function AddTransactionDialog() {
                       <SelectTrigger>
                         <SelectValue>
                            {selectedAccount ? (
-                                <div className="flex items-center gap-2">
-                                    {selectedAccount.color && <div className="h-2 w-2 rounded-full" style={{ backgroundColor: selectedAccount.color }} />}
-                                    <span>{selectedAccount.name}</span>
+                                <div className="flex items-center gap-3">
+                                    <Avatar className="h-6 w-6 rounded-md">
+                                        <AvatarImage src={selectedAccount.iconUrl || undefined} alt={selectedAccount.name}/>
+                                        <AvatarFallback className="rounded-md bg-muted text-xs">
+                                            <Landmark className="h-4 w-4 text-muted-foreground" />
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex items-center gap-2">
+                                        {selectedAccount.color && <div className="h-2 w-2 rounded-full" style={{ backgroundColor: selectedAccount.color }} />}
+                                        <span>{selectedAccount.name}</span>
+                                    </div>
                                 </div>
                             ) : (
                                 "Seleziona un conto"
@@ -230,9 +239,17 @@ export function AddTransactionDialog() {
                     <SelectContent>
                       {accounts.map((acc) => (
                         <SelectItem key={acc.id} value={acc.id}>
-                          <div className="flex items-center gap-2">
-                            {acc.color && <div className="h-2 w-2 rounded-full" style={{ backgroundColor: acc.color }} />}
-                            <span>{acc.name}</span>
+                          <div className="flex items-center gap-3">
+                             <Avatar className="h-6 w-6 rounded-md">
+                                <AvatarImage src={acc.iconUrl || undefined} alt={acc.name}/>
+                                <AvatarFallback className="rounded-md bg-muted text-xs">
+                                    <Landmark className="h-4 w-4 text-muted-foreground" />
+                                </AvatarFallback>
+                            </Avatar>
+                            <div className="flex items-center gap-2">
+                                {acc.color && <div className="h-2 w-2 rounded-full" style={{ backgroundColor: acc.color }} />}
+                                <span>{acc.name}</span>
+                            </div>
                           </div>
                         </SelectItem>
                       ))}

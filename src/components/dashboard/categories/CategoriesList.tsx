@@ -21,7 +21,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import DynamicIcon from "@/components/DynamicIcon";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Edit, Trash2 } from "lucide-react";
+import { MoreHorizontal, Edit, Trash2, ArrowDownCircle, ArrowUpCircle } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -165,8 +165,14 @@ export function CategoriesList() {
     <>
       <Tabs defaultValue="expense" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="expense" className="data-[state=active]:bg-destructive/10 data-[state=active]:text-destructive">Spese</TabsTrigger>
-          <TabsTrigger value="income" className="data-[state=active]:bg-success/10 data-[state=active]:text-success">Entrate</TabsTrigger>
+          <TabsTrigger value="expense" className="data-[state=active]:bg-destructive/10 data-[state=active]:text-destructive">
+             <ArrowDownCircle className="mr-2 h-4 w-4" />
+             Spese
+            </TabsTrigger>
+          <TabsTrigger value="income" className="data-[state=active]:bg-success/10 data-[state=active]:text-success">
+             <ArrowUpCircle className="mr-2 h-4 w-4" />
+             Entrate
+            </TabsTrigger>
         </TabsList>
         <Card className="mt-4">
             <TabsContent value="expense" className="m-0">

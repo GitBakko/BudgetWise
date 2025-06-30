@@ -28,9 +28,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowDownCircle, ArrowUpCircle, Sparkles } from "lucide-react";
 import { IconPicker } from "./IconPicker";
 import { cn } from "@/lib/utils";
+import { useDebounce } from "use-debounce";
+import { suggestCategoryIcon } from "@/ai/flows/suggestCategoryIcon";
 
 const categorySchema = z.object({
   name: z.string().min(2, { message: "Il nome deve contenere almeno 2 caratteri." }),
@@ -50,6 +52,7 @@ export function EditCategoryDialog({ category, open, onOpenChange }: EditCategor
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
+  const [iconSuggestionLoading, setIconSuggestionLoading] = useState(false);
   
   const form = useForm<FormValues>({
     resolver: zodResolver(categorySchema),
@@ -61,6 +64,8 @@ export function EditCategoryDialog({ category, open, onOpenChange }: EditCategor
   });
 
   const categoryType = form.watch("type");
+  const categoryName = form.watch("name");
+  const [debouncedCategoryName] = useDebounce(categoryName, 1000);
 
   useEffect(() => {
     if (open) {
@@ -72,6 +77,24 @@ export function EditCategoryDialog({ category, open, onOpenChange }: EditCategor
     }
   }, [category, open, form]);
 
+  useEffect(() => {
+    // Suggest icon only if the name is long enough and the user hasn't manually changed the icon
+    if (debouncedCategoryName && debouncedCategoryName.length > 2 && !form.formState.dirtyFields.icon) {
+      const getSuggestion = async () => {
+        setIconSuggestionLoading(true);
+        try {
+          const icon = await suggestCategoryIcon(debouncedCategoryName);
+          form.setValue("icon", icon, { shouldDirty: true });
+        } catch (error) {
+          console.error("Failed to suggest icon:", error);
+        } finally {
+          setIconSuggestionLoading(false);
+        }
+      };
+      getSuggestion();
+    }
+  }, [debouncedCategoryName, form]);
+
   const onSubmit = async (values: FormValues) => {
     if (!user) {
       toast({ variant: "destructive", title: "Errore", description: "Devi essere loggato." });
@@ -82,7 +105,7 @@ export function EditCategoryDialog({ category, open, onOpenChange }: EditCategor
 
     try {
       // Check for duplicate category name if name has changed
-      if (values.name !== category.name) {
+      if (values.name !== category.name || values.type !== category.type) {
           const q = query(
             collection(db, "categories"),
             where("userId", "==", user.uid),
@@ -91,7 +114,7 @@ export function EditCategoryDialog({ category, open, onOpenChange }: EditCategor
           );
           const querySnapshot = await getDocs(q);
           if (!querySnapshot.empty) {
-            toast({ variant: "destructive", title: "Nome duplicato", description: "Esiste già una categoria con questo nome." });
+            toast({ variant: "destructive", title: "Nome duplicato", description: "Esiste già una categoria con questo nome e tipo." });
             setLoading(false);
             return;
           }
@@ -135,8 +158,14 @@ export function EditCategoryDialog({ category, open, onOpenChange }: EditCategor
                       className="w-full"
                     >
                       <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="expense" className="data-[state=active]:bg-destructive/10 data-[state=active]:text-destructive">Spesa</TabsTrigger>
-                        <TabsTrigger value="income" className="data-[state=active]:bg-success/10 data-[state=active]:text-success">Entrata</TabsTrigger>
+                        <TabsTrigger value="expense" className="data-[state=active]:bg-destructive/10 data-[state=active]:text-destructive">
+                           <ArrowDownCircle className="mr-2 h-4 w-4" />
+                           Spesa
+                        </TabsTrigger>
+                        <TabsTrigger value="income" className="data-[state=active]:bg-success/10 data-[state=active]:text-success">
+                           <ArrowUpCircle className="mr-2 h-4 w-4" />
+                           Entrata
+                        </TabsTrigger>
                       </TabsList>
                     </Tabs>
                   </FormControl>
@@ -162,7 +191,15 @@ export function EditCategoryDialog({ category, open, onOpenChange }: EditCategor
               name="icon"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Icona</FormLabel>
+                   <div className="flex justify-between items-center">
+                    <FormLabel>Icona</FormLabel>
+                    {iconSuggestionLoading && (
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground animate-pulse">
+                          <Sparkles className="h-3 w-3 text-primary"/>
+                          <span>Suggerisco...</span>
+                      </div>
+                    )}
+                  </div>
                   <FormControl>
                     <IconPicker value={field.value} onChange={field.onChange} />
                   </FormControl>

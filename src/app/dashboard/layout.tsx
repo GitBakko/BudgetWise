@@ -80,7 +80,7 @@ export default function DashboardLayout({
                       }}
                     >
                       <Link href={item.href}>
-                        <item.icon className="h-4 w-4" />
+                        <item.icon />
                         <span>{item.label}</span>
                       </Link>
                     </SidebarMenuButton>

@@ -4,9 +4,15 @@ import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { addDoc, collection, Timestamp } from "firebase/firestore";
+import { addDoc, collection, Timestamp, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";
+import type { Account } from "@/types";
+import { useToast } from "@/hooks/use-toast";
+import { useDebounce } from "use-debounce";
+
+import { generateAccountIcon } from "@/ai/flows/generateIconFlow";
+
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -24,13 +30,22 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/hooks/use-toast";
-import { Image as ImageIcon, PlusCircle, Loader2, Upload, RotateCcw } from "lucide-react";
-import { generateAccountIcon } from "@/ai/flows/generateIconFlow";
-import { useDebounce } from "use-debounce";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Image as ImageIcon, PlusCircle, Loader2, Upload, RotateCcw } from "lucide-react";
+
 
 const accountSchema = z.object({
   name: z
@@ -42,6 +57,20 @@ const accountSchema = z.object({
   iconUrl: z.string().optional(),
 });
 
+type FormValues = z.infer<typeof accountSchema>;
+
+// Helper function to generate a unique account name
+const generateSuggestedName = (baseName: string, existingNames: string[]): string => {
+    let suggestion = `${baseName} (2)`;
+    let counter = 2;
+    const lowerCaseNames = existingNames.map(n => n.toLowerCase());
+    while (lowerCaseNames.includes(suggestion.toLowerCase())) {
+        counter++;
+        suggestion = `${baseName} (${counter})`;
+    }
+    return suggestion;
+};
+
 export function AddAccountDialog() {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -51,8 +80,14 @@ export function AddAccountDialog() {
   const [aiIconUrl, setAiIconUrl] = useState<string>("");
   const [iconLoading, setIconLoading] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const [userAccounts, setUserAccounts] = useState<Account[]>([]);
+  const [duplicateInfo, setDuplicateInfo] = useState<{
+    originalValues: FormValues;
+    suggestedName: string;
+  } | null>(null);
 
-  const form = useForm<z.infer<typeof accountSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(accountSchema),
     defaultValues: {
       name: "",
@@ -64,8 +99,18 @@ export function AddAccountDialog() {
   const accountNameValue = form.watch("name");
   const [debouncedAccountName] = useDebounce(accountNameValue, 1000);
 
+   useEffect(() => {
+    if (!user || !open) return;
+    const fetchAccounts = async () => {
+      const q = query(collection(db, "accounts"), where("userId", "==", user.uid));
+      const querySnapshot = await getDocs(q);
+      const accountsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Account));
+      setUserAccounts(accountsData);
+    };
+    fetchAccounts();
+  }, [user, open]);
+
   useEffect(() => {
-    // Only generate icon if name is long enough and no custom image has been set
     if (debouncedAccountName && debouncedAccountName.length > 2) {
       const formIcon = form.getValues("iconUrl");
       if(formIcon && formIcon !== aiIconUrl) return;
@@ -91,9 +136,9 @@ export function AddAccountDialog() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedAccountName]);
-
-  const onSubmit = async (values: z.infer<typeof accountSchema>) => {
-    if (!user) {
+  
+  const proceedWithSubmission = async (values: FormValues) => {
+     if (!user) {
       toast({
         variant: "destructive",
         title: "Errore",
@@ -104,9 +149,7 @@ export function AddAccountDialog() {
     setLoading(true);
     try {
       await addDoc(collection(db, "accounts"), {
-        name: values.name,
-        initialBalance: values.initialBalance,
-        iconUrl: values.iconUrl || "",
+        ...values,
         userId: user.uid,
         createdAt: Timestamp.now(),
       });
@@ -123,9 +166,30 @@ export function AddAccountDialog() {
       });
     } finally {
       setLoading(false);
+      setDuplicateInfo(null);
     }
+  }
+
+  const onSubmit = async (values: FormValues) => {
+    const existingNames = userAccounts.map(acc => acc.name.toLowerCase());
+    if (existingNames.includes(values.name.toLowerCase())) {
+        const suggestedName = generateSuggestedName(values.name, userAccounts.map(a => a.name));
+        setDuplicateInfo({ originalValues: values, suggestedName });
+        return;
+    }
+    await proceedWithSubmission(values);
   };
   
+  const handleConfirmDuplicate = () => {
+    if (!duplicateInfo) return;
+    const newValues = {
+        ...duplicateInfo.originalValues,
+        name: duplicateInfo.suggestedName,
+    };
+    form.setValue("name", duplicateInfo.suggestedName);
+    proceedWithSubmission(newValues);
+  }
+
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && file.type.startsWith("image/")) {
@@ -149,16 +213,15 @@ export function AddAccountDialog() {
     }
   }
 
-
   const handleOpenChange = (isOpen: boolean) => {
     if (loading && !isOpen) return;
-
     setOpen(isOpen);
     if (!isOpen) {
       form.reset({ name: "", initialBalance: 0, iconUrl: "" });
       setIconPreview("");
       setAiIconUrl("");
       setIconLoading(false);
+      setDuplicateInfo(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
@@ -166,6 +229,7 @@ export function AddAccountDialog() {
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button>
@@ -185,43 +249,47 @@ export function AddAccountDialog() {
             <div className="space-y-2">
               <FormLabel>Icona Conto</FormLabel>
               <div className="flex items-center gap-4">
-                <Avatar className="h-16 w-16">
-                  {iconLoading ? (
-                    <Skeleton className="h-full w-full rounded-full" />
-                  ) : (
-                    <>
-                      <AvatarImage
-                        src={iconPreview || undefined}
-                        alt="Anteprima icona conto"
-                      />
-                      <AvatarFallback className="bg-muted">
-                        <ImageIcon className="h-8 w-8 text-muted-foreground" />
-                      </AvatarFallback>
-                    </>
-                  )}
-                </Avatar>
-                <div className="flex flex-col gap-2">
-                    <Input
-                        type="file"
-                        ref={fileInputRef}
-                        className="hidden"
-                        accept="image/*"
-                        onChange={handleFileChange}
-                    />
-                    <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
-                        <Upload className="mr-2 h-4 w-4" />
-                        Carica Immagine
-                    </Button>
+                <button type="button" onClick={() => fileInputRef.current?.click()} className="relative group rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                    <Avatar className="h-16 w-16">
+                      {iconLoading ? (
+                        <Skeleton className="h-full w-full rounded-full" />
+                      ) : (
+                        <>
+                          <AvatarImage
+                            src={iconPreview || undefined}
+                            alt="Anteprima icona conto"
+                          />
+                          <AvatarFallback className="bg-muted">
+                            <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                          </AvatarFallback>
+                        </>
+                      )}
+                    </Avatar>
+                    <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity">
+                        <Upload className="h-6 w-6"/>
+                    </div>
+                </button>
+                <div className="flex-1 space-y-2">
+                    <p className="text-sm text-muted-foreground">
+                        Clicca sull'icona per caricare un'immagine.
+                    </p>
                     {iconPreview && aiIconUrl && iconPreview !== aiIconUrl && (
-                        <Button type="button" variant="ghost" size="sm" onClick={handleResetIcon}>
-                            <RotateCcw className="mr-2 h-4 w-4"/>
+                        <Button type="button" variant="ghost" size="sm" onClick={handleResetIcon} className="text-xs h-auto py-1 px-2">
+                            <RotateCcw className="mr-1.5 h-3 w-3"/>
                             Usa icona AI
                         </Button>
                     )}
                 </div>
+                 <Input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                />
               </div>
-               <p className="text-xs text-muted-foreground">
-                L'icona viene generata automaticamente oppure puoi caricarne una tu.
+               <p className="text-xs text-muted-foreground pt-1">
+                Se non carichi un'icona, ne verrà generata una automaticamente.
               </p>
             </div>
             <FormField
@@ -268,5 +336,24 @@ export function AddAccountDialog() {
         </Form>
       </DialogContent>
     </Dialog>
+
+    <AlertDialog open={!!duplicateInfo} onOpenChange={(isOpen) => !isOpen && setDuplicateInfo(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Nome Duplicato</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Esiste già un conto chiamato <span className="font-semibold text-foreground">"{duplicateInfo?.originalValues.name}"</span>. 
+                    Vuoi usare un nome suggerito o annullare?
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setDuplicateInfo(null)}>Annulla</AlertDialogCancel>
+                <AlertDialogAction onClick={handleConfirmDuplicate}>
+                    Usa "{duplicateInfo?.suggestedName}"
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

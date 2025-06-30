@@ -2,13 +2,15 @@
 
 import { AccountsList } from "@/components/dashboard/accounts/AccountsList";
 import { AddAccountDialog } from "@/components/dashboard/accounts/AddAccountDialog";
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Upload } from "lucide-react";
-import { TotalBalanceCard } from "@/components/dashboard/accounts/TotalBalanceCard";
+import { GlobalBalanceHeader } from "@/components/dashboard/accounts/GlobalBalanceHeader";
 import { BalanceChart } from "@/components/dashboard/charts/BalanceChart";
+import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
+
 
 const ImportBalancesDialog = dynamic(
   () =>
@@ -27,6 +29,8 @@ const ImportBalancesDialog = dynamic(
 );
 
 export default function AccountsPage() {
+  const [isGlobalChartOpen, setIsGlobalChartOpen] = useState(false);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -41,19 +45,17 @@ export default function AccountsPage() {
           <AddAccountDialog />
         </div>
       </div>
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-1">
-            <Suspense fallback={<Skeleton className="h-32 w-full" />}>
-                <TotalBalanceCard />
-            </Suspense>
-        </div>
-        <div className="lg:col-span-2">
-             <Suspense fallback={<Skeleton className="h-80 w-full" />}>
+      
+      <Collapsible open={isGlobalChartOpen} onOpenChange={setIsGlobalChartOpen} className="w-full space-y-4">
+        <Suspense fallback={<Skeleton className="h-24 w-full rounded-lg" />}>
+          <GlobalBalanceHeader isChartOpen={isGlobalChartOpen} />
+        </Suspense>
+        <CollapsibleContent>
+            <Suspense fallback={<Skeleton className="h-80 w-full" />}>
                 <BalanceChart />
-             </Suspense>
-        </div>
-      </div>
+            </Suspense>
+        </CollapsibleContent>
+      </Collapsible>
 
       <Suspense fallback={<Skeleton className="h-96 w-full" />}>
         <AccountsList />

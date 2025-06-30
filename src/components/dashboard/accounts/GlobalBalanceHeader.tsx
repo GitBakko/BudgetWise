@@ -5,11 +5,17 @@ import { useAuth } from "@/hooks/useAuth";
 import type { Transaction, Account, BalanceSnapshot } from "@/types";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { PiggyBank } from "lucide-react";
+import { PiggyBank, ChevronDown } from "lucide-react";
+import { CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
-export function TotalBalanceCard() {
+interface GlobalBalanceHeaderProps {
+  isChartOpen: boolean;
+}
+
+export function GlobalBalanceHeader({ isChartOpen }: GlobalBalanceHeaderProps) {
   const { user } = useAuth();
   const [totalBalance, setTotalBalance] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -85,29 +91,28 @@ export function TotalBalanceCard() {
       unsubscribers.forEach(unsub => unsub());
     };
   }, [user]);
-
+  
   if (loading) {
-    return <Skeleton className="h-32 w-full" />;
+    return <Skeleton className="h-24 w-full rounded-lg" />;
   }
 
   return (
-    <Card className="h-full">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Saldo Totale Complessivo</CardTitle>
-          <PiggyBank className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div
-            className={`text-3xl font-bold ${
-              totalBalance >= 0 ? "text-primary" : "text-destructive"
-            }`}
-          >
-            €{totalBalance.toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Saldo complessivo di tutti i conti attivi.
-          </p>
-        </CardContent>
-      </Card>
+    <div className="flex items-center justify-between bg-primary text-primary-foreground p-6 rounded-lg shadow-lg">
+      <div className="flex items-center gap-4">
+        <PiggyBank className="h-8 w-8 flex-shrink-0" />
+        <div>
+            <h2 className="text-sm font-medium text-primary-foreground/80">Saldo Totale Complessivo</h2>
+            <p className="text-3xl font-bold">
+              €{totalBalance.toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+            </p>
+        </div>
+      </div>
+      <CollapsibleTrigger asChild>
+          <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary/80 hover:text-primary-foreground rounded-full">
+              <ChevronDown className={cn("h-6 w-6 transition-transform duration-300", isChartOpen && "rotate-180")} />
+              <span className="sr-only">Mostra/nascondi andamento</span>
+          </Button>
+      </CollapsibleTrigger>
+    </div>
   );
 }

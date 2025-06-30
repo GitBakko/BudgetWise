@@ -77,7 +77,7 @@ export function AccountsList({ onImportClick }: AccountsListProps) {
                 </Button>
             )}
         </CardHeader>
-        <CardContent className="pt-0">
+        <CardContent className="p-0">
           {accountsWithComputedData.length > 0 ? (
             <Table>
               <TableHeader>

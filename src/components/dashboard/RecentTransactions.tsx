@@ -67,7 +67,7 @@ export function RecentTransactions() {
             </Link>
         </Button>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-0">
         {transactions.length > 0 ? (
           <Table>
             <TableBody>

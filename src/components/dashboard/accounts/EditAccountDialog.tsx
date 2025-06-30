@@ -74,6 +74,87 @@ const generateSuggestedName = (baseName: string, existingNames: string[]): strin
     return suggestion;
 };
 
+// Helper function to trim whitespace/transparency from an image
+const trimImage = (dataUrl: string): Promise<string> => {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            if (!ctx) {
+                resolve(dataUrl); // Failsafe
+                return;
+            }
+
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+
+            let top = canvas.height,
+                bottom = -1,
+                left = canvas.width,
+                right = -1;
+
+            // Find the bounds of the non-transparent/non-white content
+            for (let y = 0; y < canvas.height; y++) {
+                for (let x = 0; x < canvas.width; x++) {
+                    const i = (y * canvas.width + x) * 4;
+                    const alpha = data[i + 3];
+                    // Consider a pixel as content if it's not fully transparent and not pure white
+                    if (alpha > 0 && (data[i] < 255 || data[i + 1] < 255 || data[i + 2] < 255)) {
+                        top = Math.min(top, y);
+                        bottom = Math.max(bottom, y);
+                        left = Math.min(left, x);
+                        right = Math.max(right, x);
+                    }
+                }
+            }
+            
+            // If the image is completely blank or no content was found, return original
+            if (left > right || top > bottom) {
+                resolve(dataUrl);
+                return;
+            }
+
+            const width = right - left + 1;
+            const height = bottom - top + 1;
+
+            const trimCanvas = document.createElement('canvas');
+            const trimCtx = trimCanvas.getContext('2d');
+            if (!trimCtx) {
+                resolve(dataUrl); // Failsafe
+                return;
+            }
+
+            trimCanvas.width = width;
+            trimCanvas.height = height;
+
+            // Draw the cropped portion to the new canvas
+            trimCtx.drawImage(
+                canvas,
+                left,
+                top,
+                width,
+                height,
+                0,
+                0,
+                width,
+                height
+            );
+
+            resolve(trimCanvas.toDataURL());
+        };
+        img.onerror = () => {
+          resolve(dataUrl); // Failsafe if image fails to load
+        }
+        img.src = dataUrl;
+    });
+};
+
+
 export function EditAccountDialog({ account, open, onOpenChange }: EditAccountDialogProps) {
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
@@ -208,10 +289,13 @@ export function EditAccountDialog({ account, open, onOpenChange }: EditAccountDi
     const file = event.target.files?.[0];
     if (file && file.type.startsWith("image/")) {
         const reader = new FileReader();
-        reader.onloadend = () => {
+        reader.onloadend = async () => {
             const dataUrl = reader.result as string;
-            setIconPreview(dataUrl);
-            form.setValue("iconUrl", dataUrl, { shouldDirty: true });
+            
+            const trimmedDataUrl = await trimImage(dataUrl);
+
+            setIconPreview(trimmedDataUrl);
+            form.setValue("iconUrl", trimmedDataUrl, { shouldDirty: true });
         };
         reader.readAsDataURL(file);
     } else if (file) {
@@ -245,8 +329,8 @@ export function EditAccountDialog({ account, open, onOpenChange }: EditAccountDi
                                 <Skeleton className="h-full w-full rounded-lg" />
                             ) : (
                                 <>
-                                    <AvatarImage src={iconPreview || undefined} alt={account.name} />
-                                    <AvatarFallback className="rounded-lg">
+                                    <AvatarImage src={iconPreview || undefined} alt={account.name} className="object-cover" />
+                                    <AvatarFallback className="rounded-lg bg-muted">
                                         <Landmark className="h-8 w-8 text-muted-foreground" />
                                     </AvatarFallback>
                                 </>

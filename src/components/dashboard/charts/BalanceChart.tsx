@@ -6,7 +6,21 @@ import { useAuth } from "@/hooks/useAuth";
 import type { Transaction, Account, BalanceSnapshot } from "@/types";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { subDays, startOfDay, format } from "date-fns";
+import { 
+  startOfDay, 
+  format,
+  differenceInDays, 
+  subDays,
+  addDays, 
+  startOfMonth, 
+  addMonths, 
+  startOfQuarter, 
+  addQuarters, 
+  startOfYear, 
+  addYears,
+  isAfter,
+  isBefore
+} from "date-fns";
 import { it } from "date-fns/locale";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -14,6 +28,37 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import { TrendingUp } from "lucide-react";
 import { ChartContainer, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
+
+
+const getChartTimeSettings = (oldestDate: Date, newestDate: Date) => {
+    const daysDiff = differenceInDays(newestDate, oldestDate);
+
+    if (daysDiff <= 60) { // Up to 2 months -> daily
+        return {
+            startDate: subDays(newestDate, Math.max(daysDiff, 29)), // Show at least 30 days
+            increment: (d: Date) => addDays(d, 1),
+            format: "d MMM"
+        };
+    } else if (daysDiff <= 365 * 1.5) { // Up to 1.5 years -> monthly
+        return {
+            startDate: startOfMonth(oldestDate),
+            increment: (d: Date) => addMonths(d, 1),
+            format: "MMM 'yy"
+        };
+    } else if (daysDiff <= 365 * 3) { // Up to 3 years -> quarterly
+        return {
+            startDate: startOfQuarter(oldestDate),
+            increment: (d: Date) => addQuarters(d, 1),
+            format: (d: Date) => `Q${Math.floor((d.getMonth() + 3) / 3)} '${format(d, 'yy')}`
+        };
+    } else { // More than 3 years -> yearly
+        return {
+            startDate: startOfYear(oldestDate),
+            increment: (d: Date) => addYears(d, 1),
+            format: "yyyy"
+        };
+    }
+};
 
 export function BalanceChart() {
   const { user } = useAuth();
@@ -38,6 +83,13 @@ export function BalanceChart() {
     const calculateData = () => {
       if (!user || !dataLoaded.transactions || !dataLoaded.accounts || !dataLoaded.snapshots) return;
       
+      if (allAccounts.length === 0) {
+          setLoading(false);
+          setChartData([]);
+          setChartConfig({});
+          return;
+      }
+      
       // Setup Chart Config
       const config: ChartConfig = {
         "Saldo Totale": {
@@ -61,11 +113,10 @@ export function BalanceChart() {
       setChartConfig(config);
 
       const calculateAccountBalanceOnDate = (account: Account, date: Date, transactions: Transaction[], snapshots: BalanceSnapshot[]) => {
-          const accountTransactions = transactions
-              .filter(t => t.accountId === account.id && t.date.toDate() <= date);
+          const accountTransactions = transactions.filter(t => t.accountId === account.id);
           
           const accountSnapshots = snapshots
-              .filter(s => s.accountId === account.id && s.date.toDate() <= date)
+              .filter(s => s.accountId === account.id && !isAfter(s.date.toDate(), date))
               .sort((a, b) => b.date.seconds - a.date.seconds);
 
           let startingBalance = account.initialBalance;
@@ -77,7 +128,7 @@ export function BalanceChart() {
           }
 
           const balanceChange = accountTransactions
-              .filter(t => t.date.toDate() > startingDate)
+              .filter(t => isAfter(t.date.toDate(), startingDate) && !isAfter(t.date.toDate(), date))
               .reduce((acc, t) => {
                   return t.type === 'income' ? acc + t.amount : acc - t.amount;
               }, 0);
@@ -85,23 +136,32 @@ export function BalanceChart() {
           return startingBalance + balanceChange;
       };
 
-      const data = [];
+      let oldestDate = new Date();
+      allAccounts.forEach(acc => {
+        if (isBefore(acc.createdAt.toDate(), oldestDate)) oldestDate = acc.createdAt.toDate();
+      });
+      
       const today = startOfDay(new Date());
-      for (let i = 29; i >= 0; i--) {
-        const date = subDays(today, i);
+      const settings = getChartTimeSettings(startOfDay(oldestDate), today);
+
+      const data = [];
+      let currentDate = settings.startDate;
+      
+      while (!isAfter(currentDate, today)) {
         const dayData: { [key: string]: any } = {
-          date: format(date, "d MMM", { locale: it }),
+          date: typeof settings.format === 'function' ? settings.format(currentDate) : format(currentDate, settings.format, { locale: it }),
         };
 
         let totalBalance = 0;
         for (const account of allAccounts) {
-            const balance = calculateAccountBalanceOnDate(account, date, allTransactions, allSnapshots);
+            const balance = calculateAccountBalanceOnDate(account, currentDate, allTransactions, allSnapshots);
             dayData[account.name] = parseFloat(balance.toFixed(2));
             totalBalance += balance;
         }
         dayData["Saldo Totale"] = parseFloat(totalBalance.toFixed(2));
         
         data.push(dayData);
+        currentDate = settings.increment(currentDate);
       }
       
       setChartData(data);
@@ -137,6 +197,25 @@ export function BalanceChart() {
   if (loading || !chartConfig) {
     return <Skeleton className="w-full h-80" />;
   }
+
+  if (chartData.length === 0) {
+      return (
+          <Card>
+              <CardHeader>
+                  <div className="flex items-center gap-2">
+                      <TrendingUp className="h-6 w-6 text-primary" />
+                      <CardTitle>Andamento Saldi</CardTitle>
+                  </div>
+                  <CardDescription>
+                      Variazione dei saldi nel tempo.
+                  </CardDescription>
+              </CardHeader>
+              <CardContent className="h-80 flex items-center justify-center">
+                  <p className="text-muted-foreground">Aggiungi un conto per visualizzare l'andamento.</p>
+              </CardContent>
+          </Card>
+      );
+  }
   
   return (
     <Card>
@@ -146,7 +225,7 @@ export function BalanceChart() {
             <CardTitle>Andamento Saldi</CardTitle>
         </div>
         <CardDescription>
-          Variazione dei saldi negli ultimi 30 giorni. Clicca sulla legenda per mostrare/nascondere le linee.
+          Variazione dei saldi nel tempo. Clicca sulla legenda per mostrare/nascondere le linee.
         </CardDescription>
       </CardHeader>
       <CardContent className="h-96 w-full p-0 pr-2">

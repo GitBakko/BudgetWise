@@ -5,7 +5,20 @@ import { useAuth } from "@/hooks/useAuth";
 import type { Transaction, BalanceSnapshot, Account } from "@/types";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { subDays, startOfDay, format, isAfter } from "date-fns";
+import { 
+  startOfDay, 
+  format, 
+  isAfter,
+  differenceInDays,
+  subDays,
+  addDays,
+  startOfMonth,
+  addMonths,
+  startOfQuarter,
+  addQuarters,
+  startOfYear,
+  addYears
+} from "date-fns";
 import { it } from "date-fns/locale";
 import { AreaChart, Area, XAxis, YAxis, Tooltip } from 'recharts';
 import { ChartContainer, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
@@ -14,6 +27,36 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 interface AccountTrendChartProps {
     account: Account;
 }
+
+const getChartTimeSettings = (oldestDate: Date, newestDate: Date) => {
+    const daysDiff = differenceInDays(newestDate, oldestDate);
+
+    if (daysDiff <= 60) { // Up to 2 months -> daily
+        return {
+            startDate: subDays(newestDate, Math.max(daysDiff, 29)), // Show at least 30 days
+            increment: (d: Date) => addDays(d, 1),
+            format: "d MMM"
+        };
+    } else if (daysDiff <= 365 * 1.5) { // Up to 1.5 years -> monthly
+        return {
+            startDate: startOfMonth(oldestDate),
+            increment: (d: Date) => addMonths(d, 1),
+            format: "MMM 'yy"
+        };
+    } else if (daysDiff <= 365 * 3) { // Up to 3 years -> quarterly
+        return {
+            startDate: startOfQuarter(oldestDate),
+            increment: (d: Date) => addQuarters(d, 1),
+            format: (d: Date) => `Q${Math.floor((d.getMonth() + 3) / 3)} '${format(d, 'yy')}`
+        };
+    } else { // More than 3 years -> yearly
+        return {
+            startDate: startOfYear(oldestDate),
+            increment: (d: Date) => addYears(d, 1),
+            format: "yyyy"
+        };
+    }
+};
 
 export function AccountTrendChart({ account }: AccountTrendChartProps) {
     const { user } = useAuth();
@@ -63,16 +106,22 @@ export function AccountTrendChart({ account }: AccountTrendChartProps) {
                 
                 return startingBalance + balanceChange;
             };
-
-            const data = [];
+            
             const today = startOfDay(new Date());
-            for (let i = 29; i >= 0; i--) {
-                const date = subDays(today, i);
-                const balance = calculateBalanceOnDate(date);
+            const oldestDate = startOfDay(account.createdAt.toDate());
+            
+            const settings = getChartTimeSettings(oldestDate, today);
+            
+            const data = [];
+            let currentDate = settings.startDate;
+
+            while (!isAfter(currentDate, today)) {
+                const balance = calculateBalanceOnDate(currentDate);
                 data.push({
-                    date: format(date, "d MMM", { locale: it }),
+                    date: typeof settings.format === 'function' ? settings.format(currentDate) : format(currentDate, settings.format, { locale: it }),
                     [account.name]: parseFloat(balance.toFixed(2)),
                 });
+                currentDate = settings.increment(currentDate);
             }
             
             setChartData(data);
@@ -102,11 +151,25 @@ export function AccountTrendChart({ account }: AccountTrendChartProps) {
         return <div className="h-56 w-full bg-muted animate-pulse rounded-lg" />;
     }
 
+    if (chartData.length === 0) {
+        return (
+             <Card className="border-dashed bg-transparent shadow-none">
+                <CardHeader className="p-4">
+                    <CardTitle className="text-base">Andamento Saldo - {account.name}</CardTitle>
+                    <CardDescription className="text-xs">Andamento nel tempo</CardDescription>
+                </CardHeader>
+                <CardContent className="h-48 w-full p-0 pr-2 flex items-center justify-center">
+                    <p className="text-sm text-muted-foreground">Nessun dato per generare il grafico.</p>
+                </CardContent>
+            </Card>
+        )
+    }
+
     return (
         <Card className="border-dashed bg-transparent shadow-none">
             <CardHeader className="p-4">
                 <CardTitle className="text-base">Andamento Saldo - {account.name}</CardTitle>
-                <CardDescription className="text-xs">Ultimi 30 giorni</CardDescription>
+                <CardDescription className="text-xs">Andamento nel tempo</CardDescription>
             </CardHeader>
             <CardContent className="h-48 w-full p-0 pr-2">
                 <ChartContainer config={chartConfig} className="h-full w-full">

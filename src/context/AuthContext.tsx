@@ -6,7 +6,6 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
-  User,
 } from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
@@ -53,20 +52,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => unsubscribe();
   }, []);
 
-  const signup = async (email: string, pass: string) => {
-    const userCredential = await createUserWithEmailAndPassword(
-      auth,
-      email,
-      pass
-    );
-    const newUserProfile: UserProfile = {
-      uid: userCredential.user.uid,
-      email: userCredential.user.email,
-      role: "user",
-    };
-    await setDoc(doc(db, "users", userCredential.user.uid), newUserProfile);
-    setUser(newUserProfile);
-    return userCredential;
+  const signup = (email: string, pass: string) => {
+    return createUserWithEmailAndPassword(auth, email, pass);
   };
 
   const login = (email: string, pass: string) => {

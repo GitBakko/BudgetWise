@@ -1,3 +1,5 @@
+"use client";
+
 import { TransactionsTable } from "@/components/history/TransactionsTable";
 import { TransactionsSummary } from "@/components/history/TransactionsSummary";
 import { Suspense, useState } from "react";

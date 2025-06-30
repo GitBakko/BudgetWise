@@ -30,6 +30,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PlusCircle, Loader2 } from "lucide-react";
 import { IconPicker } from "./IconPicker";
+import { cn } from "@/lib/utils";
 
 const categorySchema = z.object({
   name: z.string().min(2, { message: "Il nome deve contenere almeno 2 caratteri." }),
@@ -53,6 +54,8 @@ export function AddCategoryDialog() {
       icon: "ShoppingCart",
     },
   });
+
+  const categoryType = form.watch("type");
 
   const onSubmit = async (values: FormValues) => {
     if (!user) {
@@ -130,8 +133,8 @@ export function AddCategoryDialog() {
                       className="w-full"
                     >
                       <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="expense">Spesa</TabsTrigger>
-                        <TabsTrigger value="income">Entrata</TabsTrigger>
+                        <TabsTrigger value="expense" className="data-[state=active]:bg-destructive/10 data-[state=active]:text-destructive">Spesa</TabsTrigger>
+                        <TabsTrigger value="income" className="data-[state=active]:bg-success/10 data-[state=active]:text-success">Entrata</TabsTrigger>
                       </TabsList>
                     </Tabs>
                   </FormControl>
@@ -165,7 +168,15 @@ export function AddCategoryDialog() {
                 </FormItem>
               )}
             />
-            <Button type="submit" disabled={loading} className="w-full">
+            <Button 
+              type="submit" 
+              disabled={loading} 
+              className={cn(
+                "w-full",
+                categoryType === 'income' && "bg-success hover:bg-success/90 text-success-foreground",
+                categoryType === 'expense' && "bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+              )}
+            >
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

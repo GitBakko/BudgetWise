@@ -164,9 +164,9 @@ export function CategoriesList() {
   return (
     <>
       <Tabs defaultValue="expense" className="w-full">
-        <TabsList>
-          <TabsTrigger value="expense">Spese</TabsTrigger>
-          <TabsTrigger value="income">Entrate</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="expense" className="data-[state=active]:bg-destructive/10 data-[state=active]:text-destructive">Spese</TabsTrigger>
+          <TabsTrigger value="income" className="data-[state=active]:bg-success/10 data-[state=active]:text-success">Entrate</TabsTrigger>
         </TabsList>
         <Card className="mt-4">
             <TabsContent value="expense" className="m-0">

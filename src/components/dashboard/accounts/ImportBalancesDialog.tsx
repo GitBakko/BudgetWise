@@ -56,9 +56,9 @@ import {
   FileX2,
   ArrowLeft,
 } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "../ui/badge";
+import { Badge } from "@/components/ui/badge";
 
 const importSchema = z.object({
   accountId: z.string().min(1, { message: "Seleziona un conto." }),

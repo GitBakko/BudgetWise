@@ -4,6 +4,7 @@ import { AddTransactionDialog } from "@/components/dashboard/AddTransactionDialo
 import { SavingsAdvisor } from "@/components/dashboard/SavingsAdvisor";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { BalanceChart } from "@/components/dashboard/charts/BalanceChart";
 
 export default function DashboardPage() {
   return (
@@ -19,6 +20,9 @@ export default function DashboardPage() {
       </div>
       <Suspense fallback={<SummarySkeleton />}>
         <SummaryCards />
+      </Suspense>
+      <Suspense fallback={<Skeleton className="h-80 w-full" />}>
+        <BalanceChart />
       </Suspense>
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">

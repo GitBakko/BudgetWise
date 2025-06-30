@@ -165,7 +165,7 @@ export function RecentTransactions() {
                       }`}
                     >
                       {transaction.type === "income" ? "+" : "-"}
-                      ${transaction.amount.toFixed(2)}
+                      €{transaction.amount.toFixed(2)}
                     </div>
                      <Badge variant="outline" className="mt-1 capitalize">{transaction.category}</Badge>
                   </TableCell>

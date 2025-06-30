@@ -2,11 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import type { Transaction, Account } from "@/types";
+import type { Transaction, Account, BalanceSnapshot } from "@/types";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { startOfMonth, endOfMonth } from "date-fns";
-import type { Timestamp } from "firebase/firestore";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -27,15 +26,16 @@ export function SummaryCards() {
       return;
     }
 
-    let unsubTransactions: () => void;
-    let unsubAccounts: () => void;
-
+    const unsubscribers: (() => void)[] = [];
+    
     let allTransactions: Transaction[] = [];
     let allAccounts: Account[] = [];
-    let isDataLoaded = { transactions: false, accounts: false };
+    let allSnapshots: BalanceSnapshot[] = [];
+
+    let dataLoaded = { transactions: false, accounts: false, snapshots: false };
 
     const calculateSummary = () => {
-      if (!user || !isDataLoaded.transactions || !isDataLoaded.accounts) return;
+      if (!user || !dataLoaded.transactions || !dataLoaded.accounts || !dataLoaded.snapshots) return;
 
       const today = new Date();
       const startDate = startOfMonth(today);
@@ -53,53 +53,59 @@ export function SummaryCards() {
           }
         }
       });
-
-      let totalIncome = 0;
-      let totalExpense = 0;
-      allTransactions.forEach(transaction => {
-        if (transaction.type === 'income') {
-            totalIncome += transaction.amount;
-        } else {
-            totalExpense += transaction.amount;
-        }
-      });
       
-      const initialBalance = allAccounts.reduce((sum, acc) => sum + acc.initialBalance, 0);
-      const totalBalance = initialBalance + totalIncome - totalExpense;
+      const calculateCurrentBalance = (account: Account) => {
+        const accountTransactions = allTransactions.filter(t => t.accountId === account.id);
+        const accountSnapshots = allSnapshots
+            .filter(s => s.accountId === account.id)
+            .sort((a, b) => b.date.seconds - a.date.seconds);
+
+        let referenceDate = account.createdAt;
+        let referenceBalance = account.initialBalance;
+
+        if (accountSnapshots.length > 0) {
+            referenceDate = accountSnapshots[0].date;
+            referenceBalance = accountSnapshots[0].balance;
+        }
+
+        const balanceChange = accountTransactions
+            .filter(t => t.date.seconds > referenceDate.seconds)
+            .reduce((acc, t) => {
+                return t.type === 'income' ? acc + t.amount : acc - t.amount;
+            }, 0);
+
+        return referenceBalance + balanceChange;
+      };
+
+      const totalBalance = allAccounts.reduce((sum, acc) => sum + calculateCurrentBalance(acc), 0);
 
       setSummary({ monthlyIncome, monthlyExpense, totalBalance });
       setLoading(false);
     };
 
-    const transQuery = query(
-      collection(db, "transactions"),
-      where("userId", "==", user.uid)
-    );
-    unsubTransactions = onSnapshot(transQuery, (snapshot) => {
+    const transQuery = query(collection(db, "transactions"), where("userId", "==", user.uid));
+    unsubscribers.push(onSnapshot(transQuery, (snapshot) => {
       allTransactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Transaction));
-      isDataLoaded.transactions = true;
+      dataLoaded.transactions = true;
       calculateSummary();
-    }, (error) => {
-      console.error("Error fetching transactions:", error);
-      setLoading(false);
-    });
+    }));
     
-    const accQuery = query(
-      collection(db, "accounts"),
-      where("userId", "==", user.uid)
-    );
-    unsubAccounts = onSnapshot(accQuery, (snapshot) => {
+    const accQuery = query(collection(db, "accounts"), where("userId", "==", user.uid));
+    unsubscribers.push(onSnapshot(accQuery, (snapshot) => {
       allAccounts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Account));
-      isDataLoaded.accounts = true;
+      dataLoaded.accounts = true;
       calculateSummary();
-    }, (error) => {
-      console.error("Error fetching accounts:", error);
-      setLoading(false);
-    });
+    }));
+
+    const snapQuery = query(collection(db, "balanceSnapshots"), where("userId", "==", user.uid));
+    unsubscribers.push(onSnapshot(snapQuery, (snapshot) => {
+      allSnapshots = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BalanceSnapshot));
+      dataLoaded.snapshots = true;
+      calculateSummary();
+    }));
 
     return () => {
-      if (unsubTransactions) unsubTransactions();
-      if (unsubAccounts) unsubAccounts();
+      unsubscribers.forEach(unsub => unsub());
     };
   }, [user]);
 
@@ -122,7 +128,7 @@ export function SummaryCards() {
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-            +${summary.monthlyIncome.toFixed(2)}
+            +€{summary.monthlyIncome.toFixed(2)}
           </div>
           <p className="text-xs text-muted-foreground">Questo mese</p>
         </CardContent>
@@ -134,7 +140,7 @@ export function SummaryCards() {
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-            -${summary.monthlyExpense.toFixed(2)}
+            -€{summary.monthlyExpense.toFixed(2)}
           </div>
           <p className="text-xs text-muted-foreground">Questo mese</p>
         </CardContent>
@@ -150,7 +156,7 @@ export function SummaryCards() {
               summary.totalBalance >= 0 ? "text-primary" : "text-destructive"
             }`}
           >
-            ${summary.totalBalance.toFixed(2)}
+            €{summary.totalBalance.toFixed(2)}
           </div>
           <p className="text-xs text-muted-foreground">
             Saldo complessivo di tutti i conti

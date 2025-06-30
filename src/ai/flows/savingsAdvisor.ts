@@ -22,7 +22,7 @@ const savingsAdvisorFlow = ai.defineFlow(
     Transazioni:
     ${transactions
       .filter(t => t.type === 'expense')
-      .map(t => `- ${t.description}: $${t.amount.toFixed(2)} (Categoria: ${t.category})`)
+      .map(t => `- ${t.description}: €${t.amount.toFixed(2)} (Categoria: ${t.category})`)
       .join('\n')}
     `;
 

@@ -21,6 +21,14 @@ export type Account = {
   iconUrl?: string;
 };
 
+export type BalanceSnapshot = {
+  id: string;
+  userId: string;
+  accountId: string;
+  date: Timestamp;
+  balance: number;
+};
+
 export type Category = {
   id: string;
   name: string;

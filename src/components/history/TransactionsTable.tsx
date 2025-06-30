@@ -171,7 +171,7 @@ export function TransactionsTable() {
                     }`}
                   >
                     {transaction.type === "income" ? "+" : "-"}
-                    ${transaction.amount.toFixed(2)}
+                    €{transaction.amount.toFixed(2)}
                   </TableCell>
                 </TableRow>
               ))

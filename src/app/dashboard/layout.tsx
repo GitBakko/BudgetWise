@@ -58,7 +58,7 @@ export default function DashboardLayout({
           <Sidebar>
             <SidebarHeader className="p-4">
               <Link href="/dashboard" className="flex items-center gap-2">
-                <Image src="/logo.png" alt="BudgetWise Logo" width={36} height={36} />
+                <Image src="/logo.png?v=2" alt="BudgetWise Logo" width={36} height={36} />
                 <span className="text-xl font-semibold group-data-[collapsible=icon]:hidden">
                   BudgetWise
                 </span>

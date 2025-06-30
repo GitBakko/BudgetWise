@@ -136,7 +136,7 @@ export default function SignupPage() {
       <Card className="w-full max-w-md shadow-2xl">
         <CardHeader className="text-center">
            <div className="mx-auto w-fit mb-4">
-            <Image src="/logo.png" alt="BudgetWise Logo" width={64} height={64} className="rounded-2xl" />
+            <Image src="/logo.png?v=2" alt="BudgetWise Logo" width={64} height={64} className="rounded-2xl" />
           </div>
           <CardTitle className="text-3xl font-bold text-primary">Crea un Account</CardTitle>
           <CardDescription>

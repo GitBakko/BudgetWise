@@ -125,7 +125,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-md shadow-2xl">
         <CardHeader className="text-center">
           <div className="mx-auto w-fit mb-4">
-            <Image src="/logo.png" alt="BudgetWise Logo" width={64} height={64} className="rounded-2xl" />
+            <Image src="/logo.png?v=2" alt="BudgetWise Logo" width={64} height={64} className="rounded-2xl" />
           </div>
           <CardTitle className="text-3xl font-bold text-primary">BudgetWise</CardTitle>
           <p className="text-muted-foreground">Bentornato! Accedi al tuo account.</p>

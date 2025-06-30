@@ -50,7 +50,7 @@ export default function AccountsPage() {
         <Suspense fallback={<Skeleton className="h-24 w-full rounded-lg" />}>
           <GlobalBalanceHeader isChartOpen={isGlobalChartOpen} />
         </Suspense>
-        <CollapsibleContent>
+        <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
             <Suspense fallback={<Skeleton className="h-80 w-full" />}>
                 <BalanceChart />
             </Suspense>

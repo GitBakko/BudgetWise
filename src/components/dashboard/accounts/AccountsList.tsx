@@ -8,7 +8,7 @@ import { db } from "@/lib/firebase";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Landmark, MoreHorizontal, Edit, BookUp, Trash2, TrendingUp } from "lucide-react";
+import { Landmark, MoreHorizontal, Edit, BookUp, Trash2, ChevronDown } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
@@ -17,6 +17,7 @@ import { SetBalanceDialog } from "./SetBalanceDialog";
 import { DeleteAccountDialog } from "./DeleteAccountDialog";
 import { useToast } from "@/hooks/use-toast";
 import { AccountTrendChart } from "./AccountTrendChart";
+import { cn } from "@/lib/utils";
 
 export function AccountsList() {
   const { user } = useAuth();
@@ -135,7 +136,7 @@ export function AccountsList() {
                   <TableHead>Nome Conto</TableHead>
                   <TableHead>Data Creazione</TableHead>
                   <TableHead className="text-right">Saldo Iniziale</TableHead>
-                  <TableHead className="w-[50px] text-center">Grafico</TableHead>
+                  <TableHead className="w-[50px] text-center"></TableHead>
                   <TableHead className="w-[50px]"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -162,7 +163,7 @@ export function AccountsList() {
                       </TableCell>
                       <TableCell className="text-center">
                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleToggleExpand(account.id)}>
-                            <TrendingUp className="h-4 w-4"/>
+                            <ChevronDown className={cn("h-4 w-4 transition-transform duration-300", expandedAccountId === account.id && "rotate-180")}/>
                             <span className="sr-only">Mostra/Nascondi grafico</span>
                         </Button>
                       </TableCell>
@@ -193,7 +194,7 @@ export function AccountsList() {
                       </TableCell>
                     </TableRow>
                      {expandedAccountId === account.id && (
-                        <TableRow className="bg-muted/5 hover:bg-muted/5">
+                        <TableRow className="bg-muted/5 hover:bg-muted/5 animate-fade-in">
                             <TableCell colSpan={5} className="p-2 md:p-4">
                                 <AccountTrendChart account={account} />
                             </TableCell>

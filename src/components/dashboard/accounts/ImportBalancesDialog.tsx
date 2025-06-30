@@ -44,7 +44,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Upload } from "lucide-react";
+import { Upload, Loader2 } from "lucide-react";
 
 const importSchema = z.object({
   accountId: z.string().min(1, { message: "Seleziona un conto." }),
@@ -226,7 +226,14 @@ export function ImportBalancesDialog() {
             />
             
             <Button type="submit" disabled={loading || accounts.length === 0} className="w-full">
-              {loading ? "Importazione..." : "Importa File"}
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <span>Importazione...</span>
+                </>
+              ) : (
+                "Importa File"
+              )}
             </Button>
           </form>
         </Form>

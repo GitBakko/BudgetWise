@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Image as ImageIcon, PlusCircle } from "lucide-react";
+import { Image as ImageIcon, PlusCircle, Loader2 } from "lucide-react";
 import { generateAccountIcon } from "@/ai/flows/generateIconFlow";
 import { useDebounce } from "use-debounce";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -106,7 +106,7 @@ export function AddAccountDialog() {
         title: "Successo!",
         description: "Conto aggiunto con successo.",
       });
-      setOpen(false);
+      handleOpenChange(false);
     } catch (error) {
       toast({
         variant: "destructive",
@@ -119,12 +119,12 @@ export function AddAccountDialog() {
   };
 
   const handleOpenChange = (isOpen: boolean) => {
+    setOpen(isOpen);
     if (!isOpen) {
       form.reset({ name: "", initialBalance: 0, iconUrl: "" });
       setIconPreview("");
       setIconLoading(false);
     }
-    setOpen(isOpen);
   };
 
   return (
@@ -191,8 +191,19 @@ export function AddAccountDialog() {
                 </FormItem>
               )}
             />
-            <Button type="submit" disabled={loading} className="w-full">
-              {loading ? "Aggiunta in corso..." : "Aggiungi Conto"}
+            <Button
+              type="submit"
+              disabled={loading || iconLoading}
+              className="w-full"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <span>Aggiunta in corso...</span>
+                </>
+              ) : (
+                "Aggiungi Conto"
+              )}
             </Button>
           </form>
         </Form>

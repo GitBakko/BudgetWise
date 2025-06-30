@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -28,7 +27,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import type { Account } from "@/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Landmark } from "lucide-react";
+import { Landmark, Loader2 } from "lucide-react";
 
 const accountSchema = z.object({
   name: z
@@ -146,7 +145,14 @@ export function EditAccountDialog({ account, open, onOpenChange }: EditAccountDi
               )}
             />
             <Button type="submit" disabled={loading} className="w-full">
-              {loading ? "Salvataggio..." : "Salva Modifiche"}
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <span>Salvataggio...</span>
+                </>
+              ) : (
+                "Salva Modifiche"
+              )}
             </Button>
           </form>
         </Form>

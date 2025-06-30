@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -27,7 +26,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Calendar as CalendarIcon } from "lucide-react";
+import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Account } from "@/types";
 import { startOfDay, format } from 'date-fns';
@@ -180,7 +179,14 @@ export function SetBalanceDialog({ account, open, onOpenChange }: SetBalanceDial
               )}
             />
             <Button type="submit" disabled={loading} className="w-full">
-              {loading ? "Salvataggio..." : "Salva Saldo"}
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <span>Salvataggio...</span>
+                </>
+              ) : (
+                "Salva Saldo"
+              )}
             </Button>
           </form>
         </Form>

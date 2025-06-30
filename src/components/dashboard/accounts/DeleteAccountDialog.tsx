@@ -12,6 +12,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import type { Account } from "@/types";
+import { Loader2 } from "lucide-react";
 
 interface DeleteAccountDialogProps {
   account: Account;
@@ -31,6 +32,7 @@ export function DeleteAccountDialog({
   const handleConfirm = async () => {
     setLoading(true);
     await onConfirm();
+    // No need to set loading to false, as the component will unmount
   };
 
   return (
@@ -52,7 +54,14 @@ export function DeleteAccountDialog({
             disabled={loading}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
-            {loading ? "Eliminazione..." : "Sì, elimina il conto"}
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <span>Eliminazione...</span>
+              </>
+            ) : (
+              "Sì, elimina il conto"
+            )}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

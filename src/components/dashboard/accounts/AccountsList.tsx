@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import type { Account } from "@/types";
-import { collection, query, where, onSnapshot, orderBy, writeBatch, getDocs, doc } from "firebase/firestore";
+import { collection, query, where, onSnapshot, orderBy, writeBatch, getDocs, doc, deleteDoc, type Firestore, type Query } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -58,24 +58,38 @@ export function AccountsList() {
   }, [user]);
 
   const handleDeleteAccount = async (accountId: string) => {
+    if (!user) {
+        toast({
+            variant: "destructive",
+            title: "Errore",
+            description: "Devi essere loggato per eliminare un conto."
+        });
+        return;
+    }
     try {
-        const batch = writeBatch(db);
+        const deleteQueryBatch = async (db_instance: Firestore, q: Query) => {
+            const snapshot = await getDocs(q);
+            
+            const batchSize = 499;
+            let i = 0;
+            while (i < snapshot.size) {
+                const batch = writeBatch(db_instance);
+                snapshot.docs.slice(i, i + batchSize).forEach(doc => {
+                    batch.delete(doc.ref);
+                });
+                await batch.commit();
+                i += batchSize;
+            }
+        };
 
-        // 1. Delete the account itself
+        const transQuery = query(collection(db, "transactions"), where("accountId", "==", accountId), where("userId", "==", user.uid));
+        await deleteQueryBatch(db, transQuery);
+
+        const snapQuery = query(collection(db, "balanceSnapshots"), where("accountId", "==", accountId), where("userId", "==", user.uid));
+        await deleteQueryBatch(db, snapQuery);
+
         const accountRef = doc(db, "accounts", accountId);
-        batch.delete(accountRef);
-
-        // 2. Delete associated transactions
-        const transQuery = query(collection(db, "transactions"), where("accountId", "==", accountId));
-        const transSnapshot = await getDocs(transQuery);
-        transSnapshot.forEach(doc => batch.delete(doc.ref));
-
-        // 3. Delete associated balance snapshots
-        const snapQuery = query(collection(db, "balanceSnapshots"), where("accountId", "==", accountId));
-        const snapSnapshot = await getDocs(snapQuery);
-        snapSnapshot.forEach(doc => batch.delete(doc.ref));
-
-        await batch.commit();
+        await deleteDoc(accountRef);
 
         toast({
             title: "Successo!",
@@ -86,7 +100,7 @@ export function AccountsList() {
         toast({
             variant: "destructive",
             title: "Errore",
-            description: "Impossibile eliminare il conto. Riprova."
+            description: "Impossibile eliminare il conto. Riprova. Potrebbe essere necessario creare un indice in Firestore (controlla la console per il link)."
         });
     } finally {
         setDeletingAccount(null);

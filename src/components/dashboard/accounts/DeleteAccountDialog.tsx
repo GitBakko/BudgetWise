@@ -11,14 +11,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
 import type { Account } from "@/types";
 
 interface DeleteAccountDialogProps {
   account: Account;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: () => void;
+  onConfirm: () => Promise<void>;
 }
 
 export function DeleteAccountDialog({
@@ -29,9 +28,9 @@ export function DeleteAccountDialog({
 }: DeleteAccountDialogProps) {
   const [loading, setLoading] = useState(false);
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     setLoading(true);
-    onConfirm();
+    await onConfirm();
   };
 
   return (

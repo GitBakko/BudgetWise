@@ -195,8 +195,8 @@ export default function LoginPage() {
           <div className="flex justify-center gap-4 py-4">
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button type="button" variant="outline" size="icon" className="h-12 w-12 rounded-full" onClick={() => handleSocialLogin('google')} disabled={isLoading}>
-                  {socialLoading === 'google' ? <Loader2 className="h-6 w-6 animate-spin" /> : <GoogleIcon className="h-6 w-6" />}
+                <Button type="button" variant="outline" size="icon" className="h-12 w-12 rounded-full transition-opacity hover:opacity-80 hover:bg-background" onClick={() => handleSocialLogin('google')} disabled={isLoading}>
+                  {socialLoading === 'google' ? <Loader2 className="h-6 w-6 animate-spin" /> : <GoogleIcon className="h-7 w-7" />}
                   <span className="sr-only">Continua con Google</span>
                 </Button>
               </TooltipTrigger>
@@ -207,8 +207,8 @@ export default function LoginPage() {
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button type="button" size="icon" className="h-12 w-12 rounded-full bg-black text-white hover:bg-black/90" onClick={() => handleSocialLogin('apple')} disabled={isLoading}>
-                  {socialLoading === 'apple' ? <Loader2 className="h-6 w-6 animate-spin" /> : <AppleIcon className="h-6 w-6" />}
+                <Button type="button" size="icon" className="h-12 w-12 rounded-full bg-black text-white transition-opacity hover:opacity-80" onClick={() => handleSocialLogin('apple')} disabled={isLoading}>
+                  {socialLoading === 'apple' ? <Loader2 className="h-6 w-6 animate-spin" /> : <AppleIcon className="h-7 w-7" />}
                   <span className="sr-only">Continua con Apple</span>
                 </Button>
               </TooltipTrigger>
@@ -219,7 +219,7 @@ export default function LoginPage() {
             
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button type="button" size="icon" className="h-12 w-12 rounded-full" onClick={() => handleSocialLogin('facebook')} disabled={isLoading}>
+                <Button type="button" size="icon" className="h-12 w-12 rounded-full transition-opacity hover:opacity-80" onClick={() => handleSocialLogin('facebook')} disabled={isLoading}>
                   {socialLoading === 'facebook' ? <Loader2 className="h-6 w-6 animate-spin" /> : <MetaIcon className="h-12 w-12" />}
                   <span className="sr-only">Continua con Meta</span>
                 </Button>
@@ -231,8 +231,8 @@ export default function LoginPage() {
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button type="button" variant="outline" size="icon" className="h-12 w-12 rounded-full" onClick={() => handleSocialLogin('microsoft')} disabled={isLoading}>
-                  {socialLoading === 'microsoft' ? <Loader2 className="h-6 w-6 animate-spin" /> : <MicrosoftIcon className="h-6 w-6" />}
+                <Button type="button" variant="outline" size="icon" className="h-12 w-12 rounded-full transition-opacity hover:opacity-80 hover:bg-background" onClick={() => handleSocialLogin('microsoft')} disabled={isLoading}>
+                  {socialLoading === 'microsoft' ? <Loader2 className="h-6 w-6 animate-spin" /> : <MicrosoftIcon className="h-7 w-7" />}
                   <span className="sr-only">Continua con Microsoft</span>
                 </Button>
               </TooltipTrigger>
@@ -243,8 +243,8 @@ export default function LoginPage() {
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button type="button" size="icon" className="h-12 w-12 rounded-full bg-black text-white hover:bg-black/90" onClick={() => handleSocialLogin('twitter')} disabled={isLoading}>
-                  {socialLoading === 'twitter' ? <Loader2 className="h-6 w-6 animate-spin" /> : <XIcon className="h-5 w-5" />}
+                <Button type="button" size="icon" className="h-12 w-12 rounded-full bg-black text-white transition-opacity hover:opacity-80" onClick={() => handleSocialLogin('twitter')} disabled={isLoading}>
+                  {socialLoading === 'twitter' ? <Loader2 className="h-6 w-6 animate-spin" /> : <XIcon className="h-6 w-6" />}
                   <span className="sr-only">Continua con X</span>
                 </Button>
               </TooltipTrigger>

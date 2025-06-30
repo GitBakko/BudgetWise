@@ -166,8 +166,8 @@ export function TransactionsTable() {
                   <TableCell
                     className={`text-right font-semibold ${
                       transaction.type === "income"
-                        ? "text-green-600 dark:text-green-400"
-                        : "text-red-600 dark:text-red-400"
+                        ? "text-success"
+                        : "text-destructive"
                     }`}
                   >
                     {transaction.type === "income" ? "+" : "-"}

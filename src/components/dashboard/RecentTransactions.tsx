@@ -140,11 +140,11 @@ export function RecentTransactions() {
                 <TableRow key={transaction.id}>
                   <TableCell>
                     <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-full ${transaction.type === 'income' ? 'bg-green-100 dark:bg-green-900/50' : 'bg-red-100 dark:bg-red-900/50'}`}>
+                      <div className={`p-2 rounded-full ${transaction.type === 'income' ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
                         {transaction.type === "income" ? (
-                          <ArrowUpRight className="h-5 w-5 text-green-600 dark:text-green-400" />
+                          <ArrowUpRight className="h-5 w-5" />
                         ) : (
-                          <ArrowDownLeft className="h-5 w-5 text-red-600 dark:text-red-400" />
+                          <ArrowDownLeft className="h-5 w-5" />
                         )}
                       </div>
                       <div>
@@ -160,8 +160,8 @@ export function RecentTransactions() {
                     <div
                       className={`font-semibold ${
                         transaction.type === "income"
-                          ? "text-green-600"
-                          : "text-red-600"
+                          ? "text-success"
+                          : "text-destructive"
                       }`}
                     >
                       {transaction.type === "income" ? "+" : "-"}

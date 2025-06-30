@@ -171,7 +171,7 @@ export function AccountsList() {
                                 <span>Imposta Saldo a Data</span>
                               </DropdownMenuItem>
                                <DropdownMenuSeparator />
-                              <DropdownMenuItem onSelect={() => setDeletingAccount(account)} className="text-red-600 focus:text-red-600">
+                              <DropdownMenuItem onSelect={() => setDeletingAccount(account)} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
                                 <Trash2 className="mr-2 h-4 w-4"/>
                                 <span>Elimina Conto</span>
                               </DropdownMenuItem>

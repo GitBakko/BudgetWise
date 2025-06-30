@@ -26,15 +26,25 @@ const prompt = ai.definePrompt({
   name: 'suggestCategoryIconPrompt',
   input: {schema: SuggestCategoryIconInputSchema},
   output: {schema: SuggestCategoryIconOutputSchema.nullable()},
-  prompt: `You are an expert UI designer specializing in iconography for financial apps.
-Your task is to suggest the most appropriate icon for a given category name.
-You must choose one icon from the provided list.
-Return only the exact name of the icon as a string, with no other text or explanation.
+  prompt: `You are an expert UI designer. Your task is to select the single best icon from a list that represents a given financial transaction category.
 
-Available lucide-react icons:
+**Instructions:**
+1.  Review the category name provided.
+2.  Choose the single most fitting icon from the "Available Icons" list.
+3.  Return **only** the exact, case-sensitive name of the icon. Do not include any other text, punctuation, or explanation.
+
+**Available Icons:**
 ${iconList.join(', ')}
 
-Category Name: {{text}}`
+---
+**Example:**
+Category Name: "Cena fuori"
+Your Output: UtensilsCrossed
+---
+
+**Task:**
+Category Name: {{text}}
+Your Output:`
 });
 
 const suggestCategoryIconFlow = ai.defineFlow(

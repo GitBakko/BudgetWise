@@ -68,7 +68,7 @@ export function AddCategoryDialog({ open, onOpenChange, initialType = 'expense' 
 
   const categoryType = form.watch("type");
   const categoryName = form.watch("name");
-  const [debouncedCategoryName] = useDebounce(categoryName, 1000);
+  const [debouncedCategoryName] = useDebounce(categoryName, 500);
   
   useEffect(() => {
     form.reset({

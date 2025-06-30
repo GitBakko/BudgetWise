@@ -67,7 +67,7 @@ export function EditCategoryDialog({ category, open, onOpenChange }: EditCategor
 
   const categoryType = form.watch("type");
   const categoryName = form.watch("name");
-  const [debouncedCategoryName] = useDebounce(categoryName, 1000);
+  const [debouncedCategoryName] = useDebounce(categoryName, 500);
 
   useEffect(() => {
     if (open) {

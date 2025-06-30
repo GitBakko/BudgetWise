@@ -10,6 +10,7 @@ import { Upload } from "lucide-react";
 import { GlobalBalanceHeader } from "@/components/dashboard/accounts/GlobalBalanceHeader";
 import { BalanceChart } from "@/components/dashboard/charts/BalanceChart";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
+import type { Account } from "@/types";
 
 
 const ImportBalancesDialog = dynamic(
@@ -19,17 +20,19 @@ const ImportBalancesDialog = dynamic(
     ),
   {
     ssr: false,
-    loading: () => (
-      <Button variant="outline" disabled>
-        <Upload className="mr-2 h-4 w-4" />
-        Importa Saldi
-      </Button>
-    ),
   }
 );
 
 export default function AccountsPage() {
   const [isGlobalChartOpen, setIsGlobalChartOpen] = useState(false);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [importTargetAccount, setImportTargetAccount] = useState<Account | undefined>();
+
+  const handleOpenImportDialog = (account?: Account) => {
+    setImportTargetAccount(account);
+    setIsImportDialogOpen(true);
+  };
+
 
   return (
     <div className="space-y-6">
@@ -41,7 +44,10 @@ export default function AccountsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <ImportBalancesDialog />
+           <Button variant="outline" onClick={() => handleOpenImportDialog()}>
+            <Upload className="mr-2 h-4 w-4" />
+            Importa Saldi
+          </Button>
           <AddAccountDialog />
         </div>
       </div>
@@ -58,8 +64,16 @@ export default function AccountsPage() {
       </Collapsible>
 
       <Suspense fallback={<Skeleton className="h-96 w-full" />}>
-        <AccountsList />
+        <AccountsList onImportClick={handleOpenImportDialog} />
       </Suspense>
+
+      {isImportDialogOpen && (
+          <ImportBalancesDialog
+              open={isImportDialogOpen}
+              onOpenChange={setIsImportDialogOpen}
+              account={importTargetAccount}
+          />
+      )}
     </div>
   );
 }

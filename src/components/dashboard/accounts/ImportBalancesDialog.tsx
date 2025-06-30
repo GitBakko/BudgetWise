@@ -18,7 +18,7 @@ import { db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";
 import type { Account } from "@/types";
 import Papa from "papaparse";
-import { startOfDay, format, startOfMonth } from "date-fns";
+import { startOfDay, format } from "date-fns";
 import { it } from "date-fns/locale";
 
 import { Button } from "@/components/ui/button";
@@ -28,7 +28,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -48,7 +47,6 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Upload,
   Loader2,
   Landmark,
   FileCheck2,
@@ -80,8 +78,13 @@ type PreviewData = {
   rowsToImport: { date: Date; balance: number; existingDocId?: string }[];
 };
 
-export function ImportBalancesDialog() {
-  const [open, setOpen] = useState(false);
+interface ImportBalancesDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  account?: Account;
+}
+
+export function ImportBalancesDialog({ open, onOpenChange, account: preselectedAccount }: ImportBalancesDialogProps) {
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -92,7 +95,7 @@ export function ImportBalancesDialog() {
   const form = useForm<ImportFormValues>({
     resolver: zodResolver(importSchema),
     defaultValues: {
-      accountId: "",
+      accountId: preselectedAccount?.id || "",
     },
   });
 
@@ -112,13 +115,23 @@ export function ImportBalancesDialog() {
     });
     return () => unsubscribe();
   }, [user, open]);
-
+  
   const handleReset = () => {
-    form.reset();
+    form.reset({ accountId: preselectedAccount?.id || "" });
     setStep("upload");
     setPreviewData(null);
     setLoading(false);
   };
+  
+  useEffect(() => {
+    form.reset({ accountId: preselectedAccount?.id || "" });
+  }, [preselectedAccount, form]);
+
+  useEffect(() => {
+    if (!open) {
+      handleReset();
+    }
+  }, [open]);
 
   const onGeneratePreview = (values: ImportFormValues) => {
     setLoading(true);
@@ -192,7 +205,7 @@ export function ImportBalancesDialog() {
 
           let newCount = 0;
           let overwrittenCount = 0;
-          const months = new Set<string>();
+          
           const rowsToImport: PreviewData["rowsToImport"] = [];
 
           for (const row of processedRows) {
@@ -208,8 +221,10 @@ export function ImportBalancesDialog() {
             }
 
             rowsToImport.push({ date: normalizedDate, balance: row.balance, existingDocId });
-            months.add(format(normalizedDate, "MMMM yyyy", { locale: it }));
           }
+
+          // Since rowsToImport is sorted by date, this will produce a chronologically sorted list of unique months.
+          const months = Array.from(new Set(rowsToImport.map(row => format(row.date, 'MMMM yyyy', { locale: it }))));
 
           setPreviewData({
             accountId: values.accountId,
@@ -218,7 +233,7 @@ export function ImportBalancesDialog() {
             newCount,
             overwrittenCount,
             invalidCount,
-            months: Array.from(months),
+            months: months,
             rowsToImport,
           });
           setStep("preview");
@@ -283,25 +298,15 @@ export function ImportBalancesDialog() {
     }
   };
   
-  const onOpenChange = (isOpen: boolean) => {
-    if (loading && !isOpen) return; // Prevent closing while loading
-    setOpen(isOpen);
-    if (!isOpen) {
-        // Reset state on close
-        handleReset();
-    }
+  const handleDialogChange = (isOpen: boolean) => {
+    if (loading && !isOpen) return;
+    onOpenChange(isOpen);
   }
 
   const fileRef = form.register("file");
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>
-        <Button variant="outline">
-          <Upload className="mr-2 h-4 w-4" />
-          Importa Saldi
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={handleDialogChange}>
       <DialogContent className="sm:max-w-md">
         {step === "upload" && (
           <>
@@ -325,8 +330,8 @@ export function ImportBalancesDialog() {
                       <FormLabel>Conto</FormLabel>
                       <Select
                         onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        disabled={accounts.length === 0}
+                        value={field.value}
+                        disabled={accounts.length === 0 || !!preselectedAccount}
                       >
                         <FormControl>
                           <SelectTrigger>

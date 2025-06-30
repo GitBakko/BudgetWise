@@ -9,7 +9,7 @@ import { db } from "@/lib/firebase";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Landmark, MoreHorizontal, Edit, BookCopy, Trash2, ChevronDown, Search } from "lucide-react";
+import { Landmark, MoreHorizontal, Edit, BookCopy, Trash2, ChevronDown, Search, Upload } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
@@ -21,7 +21,11 @@ import { AccountTrendChart } from "./AccountTrendChart";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 
-export function AccountsList() {
+interface AccountsListProps {
+  onImportClick: (account: Account) => void;
+}
+
+export function AccountsList({ onImportClick }: AccountsListProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -238,6 +242,10 @@ export function AccountsList() {
                                     <BookCopy className="mr-2 h-4 w-4" />
                                     <span>Gestisci Saldi Storici</span>
                                   </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => onImportClick(account)}>
+                                  <Upload className="mr-2 h-4 w-4"/>
+                                  <span>Importa Saldi</span>
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem onSelect={() => setDeletingAccount(account)} className="text-destructive focus:text-destructive focus:bg-destructive/10">

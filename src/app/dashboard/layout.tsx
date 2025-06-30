@@ -54,7 +54,7 @@ export default function DashboardLayout({
   return (
     <AuthGuard>
       <SidebarProvider>
-        <div className="flex min-h-screen bg-background text-foreground">
+        <div className="flex w-full min-h-screen bg-background text-foreground">
           <Sidebar>
             <SidebarHeader className="p-4">
               <Link href="/dashboard" className="flex items-center gap-2">

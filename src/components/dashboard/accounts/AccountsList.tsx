@@ -25,8 +25,7 @@ interface AccountsListProps {
 export function AccountsList({ onImportClick }: AccountsListProps) {
   const {
     loading,
-    filteredAccounts,
-    accounts,
+    accountsWithInitialData,
     searchTerm,
     setSearchTerm,
     isSearchVisible,
@@ -79,11 +78,12 @@ export function AccountsList({ onImportClick }: AccountsListProps) {
             )}
         </CardHeader>
         <CardContent className="pt-0">
-          {accounts.length > 0 ? (
+          {accountsWithInitialData.length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome Conto</TableHead>
+                  <TableHead>Data Creazione</TableHead>
                   <TableHead>Data Saldo Iniziale</TableHead>
                   <TableHead className="text-right">Saldo Iniziale</TableHead>
                   <TableHead className="w-[50px] text-center"></TableHead>
@@ -91,7 +91,7 @@ export function AccountsList({ onImportClick }: AccountsListProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredAccounts.length > 0 ? filteredAccounts.map((account) => (
+                {accountsWithInitialData.map((account) => (
                   <Fragment key={account.id}>
                     <TableRow>
                       <TableCell>
@@ -108,8 +108,11 @@ export function AccountsList({ onImportClick }: AccountsListProps) {
                           </div>
                         </div>
                       </TableCell>
+                       <TableCell>
+                        {new Date(account.createdAt.seconds * 1000).toLocaleDateString("it-IT")}
+                      </TableCell>
                       <TableCell>
-                        {new Date((account.balanceStartDate || account.createdAt).seconds * 1000).toLocaleDateString("it-IT")}
+                        {account.balanceStartDate ? new Date(account.balanceStartDate.seconds * 1000).toLocaleDateString("it-IT") : 'N/D'}
                       </TableCell>
                       <TableCell className="text-right font-semibold">
                         €{account.initialBalance.toFixed(2)}
@@ -158,21 +161,19 @@ export function AccountsList({ onImportClick }: AccountsListProps) {
                     </TableRow>
                      {expandedAccountId === account.id && (
                         <TableRow className="bg-muted/50 hover:bg-muted/50 animate-in fade-in-50">
-                            <TableCell colSpan={5} className="p-2 md:p-4">
+                            <TableCell colSpan={6} className="p-2 md:p-4">
                                 <AccountTrendChart account={account} />
                             </TableCell>
                         </TableRow>
                     )}
                   </Fragment>
-                )) : (
-                   <TableRow>
-                      <TableCell colSpan={5} className="h-24 text-center">
-                        Nessun conto trovato per "{searchTerm}".
-                      </TableCell>
-                    </TableRow>
-                )}
+                ))}
               </TableBody>
             </Table>
+          ) : accountsWithInitialData.length > 0 && searchTerm ? (
+             <p className="py-8 text-center text-muted-foreground">
+                Nessun conto trovato per "{searchTerm}".
+            </p>
           ) : (
             <p className="py-8 text-center text-muted-foreground">
               Nessun conto trovato. Aggiungine uno per iniziare!

@@ -45,27 +45,36 @@ export function AccountTrendChart({ account }: AccountTrendChartProps) {
 
             const today = startOfDay(new Date());
             
-            let oldestDate = startOfDay((account.balanceStartDate || account.createdAt).toDate());
+            let oldestDate = new Date();
+
             if (accountSnapshots.length > 0) {
-                const oldestSnapshotDate = accountSnapshots.reduce((oldest, s) => {
+                oldestDate = accountSnapshots.reduce((oldest, s) => {
                     const sDate = s.date.toDate();
                     return isBefore(sDate, oldest) ? sDate : oldest;
                 }, new Date());
-                
-                if (isBefore(oldestSnapshotDate, oldestDate)) {
-                    oldestDate = oldestSnapshotDate;
+            }
+
+            if (accountTransactions.length > 0) {
+                const oldestTransactionDate = accountTransactions.reduce((oldest, t) => {
+                    const tDate = t.date.toDate();
+                    return isBefore(tDate, oldest) ? tDate : oldest;
+                }, new Date());
+
+                if (isBefore(oldestTransactionDate, oldestDate)) {
+                    oldestDate = oldestTransactionDate;
                 }
             }
             
-            const settings = getChartTimeSettings(oldestDate, today);
+            if (accountSnapshots.length === 0 && accountTransactions.length === 0) {
+                oldestDate = account.createdAt.toDate();
+            }
+
+            const settings = getChartTimeSettings(startOfDay(oldestDate), today);
             
             const data = [];
             let currentDate = settings.startDate;
 
             while (!isAfter(currentDate, today)) {
-                // We pass all transactions and snapshots and let the function filter internally
-                // This is a slight simplification from passing pre-filtered arrays, assuming the performance is acceptable.
-                // For a large dataset, pre-filtering would be better.
                 const balance = calculateBalanceOnDate(account, currentDate, accountTransactions, accountSnapshots);
                 data.push({
                     date: typeof settings.format === 'function' ? settings.format(currentDate) : format(currentDate, settings.format, { locale: it }),

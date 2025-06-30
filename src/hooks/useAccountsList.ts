@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import type { Account } from "@/types";
+import type { Account, BalanceSnapshot } from "@/types";
 import { collection, query, where, onSnapshot, writeBatch, getDocs, doc, deleteDoc, type Firestore, type Query } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
@@ -11,6 +11,7 @@ export function useAccountsList() {
     const { user } = useAuth();
     const { toast } = useToast();
     const [accounts, setAccounts] = useState<Account[]>([]);
+    const [snapshots, setSnapshots] = useState<BalanceSnapshot[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [editingAccount, setEditingAccount] = useState<Account | null>(null);
@@ -43,13 +44,17 @@ export function useAccountsList() {
             return;
         }
 
-        const q = query(
+        const accountsQuery = query(
             collection(db, "accounts"),
             where("userId", "==", user.uid)
         );
+        const snapshotsQuery = query(
+            collection(db, "balanceSnapshots"),
+            where("userId", "==", user.uid)
+        );
 
-        const unsubscribe = onSnapshot(
-            q,
+        const unsubAccounts = onSnapshot(
+            accountsQuery,
             (querySnapshot) => {
                 const accountsData: Account[] = [];
                 querySnapshot.forEach((doc) => {
@@ -57,7 +62,7 @@ export function useAccountsList() {
                 });
                 accountsData.sort((a, b) => a.name.localeCompare(b.name));
                 setAccounts(accountsData);
-                setLoading(false);
+                if (loading) setLoading(false);
             },
             (error) => {
                 console.error("Error fetching accounts:", error);
@@ -65,15 +70,48 @@ export function useAccountsList() {
             }
         );
 
-        return () => unsubscribe();
+        const unsubSnapshots = onSnapshot(
+            snapshotsQuery,
+            (querySnapshot) => {
+                const snapshotsData: BalanceSnapshot[] = [];
+                querySnapshot.forEach((doc) => {
+                    snapshotsData.push({ id: doc.id, ...doc.data() } as BalanceSnapshot);
+                });
+                setSnapshots(snapshotsData);
+            },
+            (error) => {
+                console.error("Error fetching snapshots:", error);
+            }
+        );
+
+
+        return () => {
+            unsubAccounts();
+            unsubSnapshots();
+        }
     }, [user]);
 
-    const filteredAccounts = useMemo(() => {
-        if (!searchTerm) return accounts;
-        return accounts.filter(account =>
+    const accountsWithInitialData = useMemo(() => {
+        const enrichedAccounts = accounts.map(account => {
+            const accountSnaps = snapshots
+                .filter(s => s.accountId === account.id)
+                .sort((a, b) => a.date.seconds - b.date.seconds);
+            
+            const initialSnapshot = accountSnaps[0];
+            
+            return {
+                ...account,
+                initialBalance: initialSnapshot?.balance ?? 0,
+                balanceStartDate: initialSnapshot?.date, // This will be a Timestamp or undefined
+            };
+        });
+        
+        if (!searchTerm) return enrichedAccounts;
+        return enrichedAccounts.filter(account =>
             account.name.toLowerCase().includes(searchTerm.toLowerCase())
         );
-    }, [accounts, searchTerm]);
+    }, [accounts, snapshots, searchTerm]);
+
 
     const handleDeleteAccount = async (accountId: string) => {
         if (!user) {
@@ -127,8 +165,7 @@ export function useAccountsList() {
 
     return {
         loading,
-        filteredAccounts,
-        accounts,
+        accountsWithInitialData,
         searchTerm,
         setSearchTerm,
         isSearchVisible,

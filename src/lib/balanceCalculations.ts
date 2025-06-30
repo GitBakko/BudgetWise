@@ -70,28 +70,31 @@ export const calculateBalanceOnDate = (
     allTransactions: Transaction[], 
     allSnapshots: BalanceSnapshot[]
 ) => {
-    const accountStartDate = (account.balanceStartDate || account.createdAt)?.toDate();
-    if (!accountStartDate || isBefore(date, accountStartDate)) {
+    const targetDate = startOfDay(date);
+
+    const accountTransactions = allTransactions.filter(t => t.accountId === account.id);
+    const accountSnapshots = allSnapshots
+        .filter(s => s.accountId === account.id)
+        .sort((a, b) => b.date.seconds - a.date.seconds); // Sort descending to find latest
+
+    // Find the latest snapshot that is on or before the target date
+    const referenceSnapshot = accountSnapshots.find(s => !isAfter(s.date.toDate(), targetDate));
+
+    if (!referenceSnapshot) {
+        // If no snapshot exists on or before the date, the balance is 0,
+        // as the account is considered not to have existed from a balance perspective.
         return 0;
     }
 
-    const accountTransactions = allTransactions.filter(t => t.accountId === account.id);
-    const priorSnapshots = allSnapshots
-        .filter(s => s.accountId === account.id && !isAfter(s.date.toDate(), date))
-        .sort((a, b) => b.date.seconds - a.date.seconds);
+    const referenceBalance = referenceSnapshot.balance;
+    const referenceDate = startOfDay(referenceSnapshot.date.toDate());
 
-    let referenceBalance = account.initialBalance;
-    let referenceDate = accountStartDate;
-
-    const latestApplicableSnapshot = priorSnapshots.find(s => !isBefore(s.date.toDate(), referenceDate));
-
-    if (latestApplicableSnapshot) {
-        referenceBalance = latestApplicableSnapshot.balance;
-        referenceDate = latestApplicableSnapshot.date.toDate();
-    }
-    
     const balanceChange = accountTransactions
-        .filter(t => isAfter(t.date.toDate(), referenceDate) && !isAfter(t.date.toDate(), date))
+        .filter(t => {
+            const transactionDate = startOfDay(t.date.toDate());
+            // Sum transactions strictly AFTER the reference snapshot date, up to and including the target date
+            return isAfter(transactionDate, referenceDate) && !isAfter(transactionDate, targetDate);
+        })
         .reduce((acc, t) => {
             return t.type === 'income' ? acc + t.amount : acc - t.amount;
         }, 0);
@@ -200,18 +203,23 @@ export const generateGlobalChartData = (
     const accountColors = [ "hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))" ];
 
     let oldestDate = new Date();
-    (shouldExplode ? minorAccounts : allAccounts).forEach(acc => {
-      const accountStartDate = (acc.balanceStartDate || acc.createdAt)?.toDate();
-      if (accountStartDate && isBefore(accountStartDate, oldestDate)) oldestDate = accountStartDate;
-    });
+    const relevantAccounts = shouldExplode ? minorAccounts : allAccounts;
+    const relevantAccountIds = new Set(relevantAccounts.map(a => a.id));
     
-    const relevantSnapshots = shouldExplode 
-        ? allSnapshots.filter(s => minorAccounts.some(a => a.id === s.accountId))
-        : allSnapshots;
+    const relevantSnapshots = allSnapshots.filter(s => relevantAccountIds.has(s.accountId));
+    
+    if (relevantSnapshots.length > 0) {
+        oldestDate = relevantSnapshots.reduce((oldest, s) => {
+            const sDate = s.date.toDate();
+            return isBefore(sDate, oldest) ? sDate : oldest;
+        }, new Date());
+    } else if (relevantAccounts.length > 0) {
+        oldestDate = relevantAccounts.reduce((oldest, a) => {
+            const aDate = a.createdAt.toDate();
+            return isBefore(aDate, oldest) ? aDate : oldest;
+        }, new Date());
+    }
 
-    relevantSnapshots.forEach(snap => {
-      if (isBefore(snap.date.toDate(), oldestDate)) oldestDate = snap.date.toDate();
-    });
     
     const settings = getChartTimeSettings(startOfDay(oldestDate), today);
     const data = [];

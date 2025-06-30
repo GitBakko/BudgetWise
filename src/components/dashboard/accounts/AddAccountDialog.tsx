@@ -4,14 +4,14 @@ import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { addDoc, collection, Timestamp, query, where, getDocs } from "firebase/firestore";
+import { collection, Timestamp, query, where, getDocs, writeBatch, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";
 import type { Account } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useDebounce } from "use-debounce";
 import { FastAverageColor } from 'fast-average-color';
-import { format } from "date-fns";
+import { format, startOfDay } from "date-fns";
 import { it } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 
@@ -280,12 +280,28 @@ export function AddAccountDialog() {
     }
     setLoading(true);
     try {
-      await addDoc(collection(db, "accounts"), {
-        ...values,
-        balanceStartDate: Timestamp.fromDate(values.balanceStartDate),
-        userId: user.uid,
-        createdAt: Timestamp.now(),
-      });
+        const batch = writeBatch(db);
+        const newAccountRef = doc(collection(db, "accounts"));
+
+        // Account data without initial balance fields
+        batch.set(newAccountRef, {
+            userId: user.uid,
+            createdAt: Timestamp.now(),
+            name: values.name,
+            iconUrl: values.iconUrl,
+            color: values.color,
+        });
+
+        // Initial balance as the first snapshot
+        batch.set(doc(collection(db, "balanceSnapshots")), {
+            userId: user.uid,
+            accountId: newAccountRef.id,
+            date: Timestamp.fromDate(startOfDay(values.balanceStartDate)),
+            balance: values.initialBalance,
+        });
+
+        await batch.commit();
+
       toast({
         title: "Successo!",
         description: "Conto aggiunto con successo.",

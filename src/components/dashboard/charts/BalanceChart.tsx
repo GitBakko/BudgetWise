@@ -29,6 +29,9 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'r
 import { TrendingUp } from "lucide-react";
 import { ChartContainer, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 
+const GROUPING_THRESHOLD = 0.02; // 2%
+const MIN_ACCOUNTS_FOR_GROUPING = 3; // Apply grouping only if there are 3 or more accounts
+
 
 const getChartTimeSettings = (oldestDate: Date, newestDate: Date) => {
     const daysDiff = differenceInDays(newestDate, oldestDate);
@@ -90,29 +93,6 @@ export function BalanceChart() {
           return;
       }
       
-      const accountColors = [
-          "hsl(var(--chart-1))",
-          "hsl(var(--chart-2))",
-          "hsl(var(--chart-3))",
-          "hsl(var(--chart-4))",
-          "hsl(var(--chart-5))",
-      ];
-
-      // Setup Chart Config
-      const config: ChartConfig = {
-        "Saldo Totale": {
-          label: "Saldo Totale",
-          color: "hsl(var(--primary))",
-        },
-      };
-      allAccounts.forEach((account, index) => {
-        config[account.name] = {
-          label: account.name,
-          color: account.color || accountColors[index % accountColors.length],
-        };
-      });
-      setChartConfig(config);
-
       const calculateAccountBalanceOnDate = (account: Account, date: Date, transactions: Transaction[], snapshots: BalanceSnapshot[]) => {
           const accountTransactions = transactions.filter(t => t.accountId === account.id);
           
@@ -137,6 +117,71 @@ export function BalanceChart() {
           return startingBalance + balanceChange;
       };
 
+      const today = startOfDay(new Date());
+
+      // Determine grouping
+      const finalBalances = new Map<string, number>();
+      allAccounts.forEach(acc => {
+          const balance = calculateAccountBalanceOnDate(acc, today, allTransactions, allSnapshots);
+          finalBalances.set(acc.id, balance);
+      });
+      const totalFinalBalance = Math.abs(Array.from(finalBalances.values()).reduce((sum, b) => sum + b, 0));
+      
+      let majorAccounts: Account[] = [...allAccounts];
+      let minorAccounts: Account[] = [];
+      let isGroupingActive = false;
+
+      if (allAccounts.length >= MIN_ACCOUNTS_FOR_GROUPING && totalFinalBalance > 0) {
+          const thresholdAmount = totalFinalBalance * GROUPING_THRESHOLD;
+          const tempMajor: Account[] = [];
+          const tempMinor: Account[] = [];
+
+          allAccounts.forEach(acc => {
+              if (Math.abs(finalBalances.get(acc.id) ?? 0) < thresholdAmount) {
+                  tempMinor.push(acc);
+              } else {
+                  tempMajor.push(acc);
+              }
+          });
+          
+          if (tempMinor.length > 0) {
+              isGroupingActive = true;
+              majorAccounts = tempMajor;
+              minorAccounts = tempMinor;
+          }
+      }
+
+      // Setup Chart Config
+      const accountColors = [
+          "hsl(var(--chart-1))",
+          "hsl(var(--chart-2))",
+          "hsl(var(--chart-3))",
+          "hsl(var(--chart-4))",
+          "hsl(var(--chart-5))",
+      ];
+      const config: ChartConfig = {
+        "Saldo Totale": {
+          label: "Saldo Totale",
+          color: "hsl(var(--primary))",
+        },
+      };
+
+      majorAccounts.forEach((account, index) => {
+        config[account.name] = {
+          label: account.name,
+          color: account.color || accountColors[index % accountColors.length],
+        };
+      });
+
+      if (isGroupingActive) {
+          config["Altri"] = {
+              label: "Altri",
+              color: "hsl(var(--muted-foreground))",
+          }
+      }
+      setChartConfig(config);
+
+
       // Find the absolute oldest date from all data points
       let oldestDate = new Date();
       allAccounts.forEach(acc => {
@@ -146,7 +191,6 @@ export function BalanceChart() {
         if (isBefore(snap.date.toDate(), oldestDate)) oldestDate = snap.date.toDate();
       });
       
-      const today = startOfDay(new Date());
       const settings = getChartTimeSettings(startOfDay(oldestDate), today);
 
       const data = [];
@@ -157,13 +201,25 @@ export function BalanceChart() {
           date: typeof settings.format === 'function' ? settings.format(currentDate) : format(currentDate, settings.format, { locale: it }),
         };
 
-        let totalBalance = 0;
-        for (const account of allAccounts) {
-            const balance = calculateAccountBalanceOnDate(account, currentDate, allTransactions, allSnapshots);
-            dayData[account.name] = parseFloat(balance.toFixed(2));
-            totalBalance += balance;
+        let totalDayBalance = 0;
+        
+        majorAccounts.forEach(acc => {
+            const balance = calculateAccountBalanceOnDate(acc, currentDate, allTransactions, allSnapshots);
+            dayData[acc.name] = parseFloat(balance.toFixed(2));
+            totalDayBalance += balance;
+        });
+
+        if (isGroupingActive) {
+            let othersBalance = 0;
+            minorAccounts.forEach(acc => {
+                const balance = calculateAccountBalanceOnDate(acc, currentDate, allTransactions, allSnapshots);
+                othersBalance += balance;
+            });
+            dayData["Altri"] = parseFloat(othersBalance.toFixed(2));
+            totalDayBalance += othersBalance;
         }
-        dayData["Saldo Totale"] = parseFloat(totalBalance.toFixed(2));
+
+        dayData["Saldo Totale"] = parseFloat(totalDayBalance.toFixed(2));
         
         data.push(dayData);
         currentDate = settings.increment(currentDate);
@@ -239,8 +295,8 @@ export function BalanceChart() {
                  {Object.keys(chartConfig).map((key) => (
                     <defs key={`def-${key}`}>
                         <linearGradient id={`fill-balance-chart-${key.replace(/[^a-zA-Z0-9]/g, '')}`} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={chartConfig[key].color} stopOpacity={0.8} />
-                        <stop offset="95%" stopColor={chartConfig[key].color} stopOpacity={0.1} />
+                        <stop offset="5%" stopColor={chartConfig[key]?.color} stopOpacity={0.8} />
+                        <stop offset="95%" stopColor={chartConfig[key]?.color} stopOpacity={0.1} />
                         </linearGradient>
                     </defs>
                  ))}
@@ -264,15 +320,16 @@ export function BalanceChart() {
                 <Legend verticalAlign="top" wrapperStyle={{paddingBottom: '20px'}} />
                 {Object.keys(chartConfig).map((key) => {
                     const isTotal = key === "Saldo Totale";
+                    const isOthers = key === "Altri";
                     return (
                         <Area
                             key={key}
                             dataKey={key}
                             type="monotone"
-                            stroke={chartConfig[key].color}
+                            stroke={chartConfig[key]?.color}
                             fill={`url(#fill-balance-chart-${key.replace(/[^a-zA-Z0-9]/g, '')})`}
                             strokeWidth={isTotal ? 2.5 : 1.5}
-                            strokeDasharray={isTotal ? "0" : "5 5"}
+                            strokeDasharray={isOthers ? "3 3" : (isTotal ? "0" : "5 5")}
                             dot={false}
                             activeDot={{ r: 4, strokeWidth: 1, fill: "hsl(var(--background))" }}
                         />

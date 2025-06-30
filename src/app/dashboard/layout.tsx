@@ -1,3 +1,4 @@
+
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -6,6 +7,7 @@ import {
   BrainCircuit,
   Wallet,
   Landmark,
+  Shapes,
 } from "lucide-react";
 
 import { AuthGuard } from "@/components/AuthGuard";
@@ -43,6 +45,11 @@ export default function DashboardLayout({
       href: "/dashboard/history",
       label: "Cronologia",
       icon: History,
+    },
+    {
+      href: "/dashboard/categories",
+      label: "Categorie",
+      icon: Shapes,
     },
     {
       href: "/dashboard/ai-advisor",

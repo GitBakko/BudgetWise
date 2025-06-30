@@ -1,3 +1,4 @@
+
 import type { Timestamp } from "firebase/firestore";
 
 export type Transaction = {
@@ -31,9 +32,11 @@ export type BalanceSnapshot = {
 
 export type Category = {
   id: string;
+  userId: string;
   name: string;
-  type: "income" | "expense" | "both";
-  createdBy?: "system" | string; // 'system' or userId
+  type: "income" | "expense";
+  icon: string;
+  createdAt: Timestamp;
 };
 
 export type UserProfile = {

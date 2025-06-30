@@ -1,17 +1,16 @@
+
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import {
-  addDoc,
-  collection,
-  Timestamp,
-} from "firebase/firestore";
+import { addDoc, collection, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserAccounts } from "@/hooks/useUserAccounts";
+import { useUserCategories } from "@/hooks/useUserCategories";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -44,12 +43,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Calendar as CalendarIcon, PlusCircle } from "lucide-react";
+import { Calendar as CalendarIcon, PlusCircle, ArrowDownCircle, ArrowUpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { it } from "date-fns/locale";
+import DynamicIcon from "@/components/DynamicIcon";
+import { Skeleton } from "../ui/skeleton";
 
 const transactionSchema = z.object({
   type: z.enum(["income", "expense"]),
@@ -62,18 +63,6 @@ const transactionSchema = z.object({
   date: z.date(),
 });
 
-const categories = {
-  income: ["Stipendio", "Bonus", "Regalo", "Altro"],
-  expense: [
-    "Spesa",
-    "Affitto",
-    "Utenze",
-    "Trasporti",
-    "Intrattenimento",
-    "Altro",
-  ],
-};
-
 export function AddTransactionDialog() {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -81,6 +70,7 @@ export function AddTransactionDialog() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<"income" | "expense">("expense");
   const accounts = useUserAccounts();
+  const { categories, loading: categoriesLoading } = useUserCategories();
 
   const form = useForm<z.infer<typeof transactionSchema>>({
     resolver: zodResolver(transactionSchema),
@@ -148,6 +138,10 @@ export function AddTransactionDialog() {
   const selectedAccountId = form.watch("accountId");
   const selectedAccount = accounts.find(a => a.id === selectedAccountId);
 
+  const availableCategories = categories.filter((c) => c.type === activeTab);
+  const selectedCategoryName = form.watch("category");
+  const selectedCategory = availableCategories.find(c => c.name === selectedCategoryName);
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -169,8 +163,14 @@ export function AddTransactionDialog() {
           className="w-full"
         >
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="expense">Spesa</TabsTrigger>
-            <TabsTrigger value="income">Entrata</TabsTrigger>
+            <TabsTrigger value="expense" className="data-[state=active]:bg-destructive/10 data-[state=active]:text-destructive">
+                <ArrowDownCircle className="mr-2 h-4 w-4" />
+                Spesa
+            </TabsTrigger>
+            <TabsTrigger value="income" className="data-[state=active]:bg-success/10 data-[state=active]:text-success">
+                <ArrowUpCircle className="mr-2 h-4 w-4" />
+                Entrata
+            </TabsTrigger>
           </TabsList>
         </Tabs>
         <Form {...form}>
@@ -253,18 +253,45 @@ export function AddTransactionDialog() {
                     onValueChange={field.onChange}
                     defaultValue={field.value}
                     value={field.value}
+                    disabled={categoriesLoading}
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Seleziona una categoria" />
+                        <SelectValue>
+                           {selectedCategory ? (
+                                <div className="flex items-center gap-2">
+                                    <DynamicIcon name={selectedCategory.icon} className="h-4 w-4" />
+                                    <span>{selectedCategory.name}</span>
+                                </div>
+                            ) : (
+                                "Seleziona una categoria"
+                            )}
+                        </SelectValue>
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {categories[activeTab].map((cat) => (
-                        <SelectItem key={cat} value={cat}>
-                          {cat}
-                        </SelectItem>
-                      ))}
+                      {categoriesLoading ? (
+                         <div className="p-2">
+                            <Skeleton className="h-8 w-full" />
+                         </div>
+                      ) : availableCategories.length > 0 ? (
+                        availableCategories.map((cat) => (
+                            <SelectItem key={cat.id} value={cat.name}>
+                              <div className="flex items-center gap-2">
+                                <DynamicIcon name={cat.icon} className="h-4 w-4" />
+                                <span>{cat.name}</span>
+                              </div>
+                            </SelectItem>
+                          ))
+                      ) : (
+                        <div className="text-center text-sm text-muted-foreground p-4">
+                            Nessuna categoria trovata.
+                            <br />
+                            <Button variant="link" asChild className="p-0 h-auto">
+                                <Link href="/dashboard/categories">Aggiungine una</Link>
+                            </Button>
+                        </div>
+                      )}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -313,7 +340,14 @@ export function AddTransactionDialog() {
                 </FormItem>
               )}
             />
-            <Button type="submit" disabled={loading || accounts.length === 0} className="w-full">
+            <Button 
+                type="submit" 
+                disabled={loading || accounts.length === 0 || availableCategories.length === 0} 
+                className={cn(
+                    "w-full",
+                    activeTab === 'income' && "bg-success hover:bg-success/90 text-success-foreground",
+                    activeTab === 'expense' && "bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                )}>
               {loading ? "Aggiunta in corso..." : "Aggiungi Transazione"}
             </Button>
           </form>

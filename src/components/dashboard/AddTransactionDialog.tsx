@@ -149,7 +149,7 @@ export function AddTransactionDialog() {
         <Button>
           <PlusCircle className="mr-2 h-4 w-4" />
           Aggiungi Transazione
-        Button>
+        </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>

@@ -19,6 +19,7 @@ import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
+  SidebarFooter,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 
@@ -88,6 +89,9 @@ export default function DashboardLayout({
                 ))}
               </SidebarMenu>
             </SidebarContent>
+            <SidebarFooter className="mt-auto border-t border-sidebar-border p-2">
+                <SidebarTrigger className="hidden md:flex mx-auto" />
+            </SidebarFooter>
           </Sidebar>
           <SidebarInset>
             <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6">

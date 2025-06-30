@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import type { Transaction } from "@/types";
+import type { Transaction, Account } from "@/types";
 import {
   collection,
   query,
@@ -34,25 +34,25 @@ import { Card, CardContent } from "@/components/ui/card";
 export function TransactionsTable() {
   const { user } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [accounts, setAccounts] = useState<Map<string, string>>(new Map());
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<"all" | "income" | "expense">(
     "all"
   );
-
+  
   useEffect(() => {
     if (!user) {
       setLoading(false);
       return;
     }
 
-    const q = query(
+    const transQuery = query(
       collection(db, "transactions"),
       where("userId", "==", user.uid)
     );
-
-    const unsubscribe = onSnapshot(
-      q,
+    const unsubTransactions = onSnapshot(
+      transQuery,
       (querySnapshot) => {
         const transactionsData: Transaction[] = [];
         querySnapshot.forEach((doc) => {
@@ -73,7 +73,23 @@ export function TransactionsTable() {
       }
     );
 
-    return () => unsubscribe();
+    const accQuery = query(
+      collection(db, "accounts"),
+      where("userId", "==", user.uid)
+    );
+    const unsubAccounts = onSnapshot(accQuery, (snapshot) => {
+      const accsMap = new Map<string, string>();
+      snapshot.forEach((doc) => {
+        const account = doc.data() as Omit<Account, 'id'>;
+        accsMap.set(doc.id, account.name);
+      });
+      setAccounts(accsMap);
+    });
+
+    return () => {
+      unsubTransactions();
+      unsubAccounts();
+    };
   }, [user]);
 
   const filteredTransactions = useMemo(() => {
@@ -121,6 +137,7 @@ export function TransactionsTable() {
           <TableHeader>
             <TableRow>
               <TableHead>Descrizione</TableHead>
+              <TableHead>Conto</TableHead>
               <TableHead>Categoria</TableHead>
               <TableHead>Data</TableHead>
               <TableHead className="text-right">Importo</TableHead>
@@ -132,6 +149,9 @@ export function TransactionsTable() {
                 <TableRow key={transaction.id}>
                   <TableCell className="font-medium">
                     {transaction.description}
+                  </TableCell>
+                  <TableCell>
+                    {accounts.get(transaction.accountId) || "Sconosciuto"}
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline" className="capitalize">
@@ -158,7 +178,7 @@ export function TransactionsTable() {
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={4}
+                  colSpan={5}
                   className="h-24 text-center text-muted-foreground"
                 >
                   Nessuna transazione trovata.

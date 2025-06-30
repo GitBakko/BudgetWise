@@ -4,6 +4,7 @@ import {
   History,
   BrainCircuit,
   Wallet,
+  Landmark,
 } from "lucide-react";
 
 import { AuthGuard } from "@/components/AuthGuard";
@@ -31,6 +32,11 @@ export default function DashboardLayout({
       href: "/dashboard",
       label: "Dashboard",
       icon: LayoutDashboard,
+    },
+    {
+      href: "/dashboard/accounts",
+      label: "Conti",
+      icon: Landmark,
     },
     {
       href: "/dashboard/history",

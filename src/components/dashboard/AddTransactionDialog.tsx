@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -8,9 +8,13 @@ import {
   addDoc,
   collection,
   Timestamp,
+  query,
+  where,
+  onSnapshot,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";
+import type { Account } from "@/types";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -56,6 +60,7 @@ const transactionSchema = z.object({
   description: z
     .string()
     .min(2, { message: "La descrizione deve contenere almeno 2 caratteri." }),
+  accountId: z.string().min(1, { message: "Seleziona un conto." }),
   category: z.string().min(1, { message: "Seleziona una categoria." }),
   date: z.date(),
 });
@@ -78,6 +83,7 @@ export function AddTransactionDialog() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<"income" | "expense">("expense");
+  const [accounts, setAccounts] = useState<Account[]>([]);
 
   const form = useForm<z.infer<typeof transactionSchema>>({
     resolver: zodResolver(transactionSchema),
@@ -85,10 +91,22 @@ export function AddTransactionDialog() {
       type: "expense",
       amount: 0,
       description: "",
+      accountId: "",
       category: "",
       date: new Date(),
     },
   });
+
+  useEffect(() => {
+    if (!user) return;
+    const q = query(collection(db, "accounts"), where("userId", "==", user.uid));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const accs: Account[] = [];
+      snapshot.forEach((doc) => accs.push({ id: doc.id, ...doc.data() } as Account));
+      setAccounts(accs);
+    });
+    return () => unsubscribe();
+  }, [user]);
 
   const onTabChange = (value: string) => {
     const type = value as "income" | "expense";
@@ -125,6 +143,7 @@ export function AddTransactionDialog() {
         type: activeTab,
         amount: 0,
         description: "",
+        accountId: "",
         category: "",
         date: new Date(),
       });
@@ -189,6 +208,36 @@ export function AddTransactionDialog() {
                   <FormControl>
                     <Input placeholder="es. Caffè" {...field} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+             <FormField
+              control={form.control}
+              name="accountId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Conto</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    value={field.value}
+                    disabled={accounts.length === 0}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleziona un conto" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {accounts.map((acc) => (
+                        <SelectItem key={acc.id} value={acc.id}>
+                          {acc.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {accounts.length === 0 && <p className="text-xs text-muted-foreground pt-1">Devi prima creare un conto dalla sezione 'Conti'.</p>}
                   <FormMessage />
                 </FormItem>
               )}
@@ -263,7 +312,7 @@ export function AddTransactionDialog() {
                 </FormItem>
               )}
             />
-            <Button type="submit" disabled={loading} className="w-full">
+            <Button type="submit" disabled={loading || accounts.length === 0} className="w-full">
               {loading ? "Aggiunta in corso..." : "Aggiungi Transazione"}
             </Button>
           </form>

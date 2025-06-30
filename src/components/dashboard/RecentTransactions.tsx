@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import type { Transaction } from "@/types";
+import type { Transaction, Account } from "@/types";
 import {
   collection,
   query,
@@ -30,11 +30,12 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { Button } from "../ui/button";
-import { ArrowUpRight, ArrowDownLeft, ArrowRight } from "lucide-react";
+import { ArrowUpRight, ArrowDownLeft, ArrowRight, Landmark } from "lucide-react";
 
 export function RecentTransactions() {
   const { user } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [accounts, setAccounts] = useState<Map<string, string>>(new Map());
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -43,13 +44,12 @@ export function RecentTransactions() {
       return;
     }
 
-    const q = query(
+    const transQuery = query(
       collection(db, "transactions"),
       where("userId", "==", user.uid)
     );
-
-    const unsubscribe = onSnapshot(
-      q,
+    const unsubTransactions = onSnapshot(
+      transQuery,
       (querySnapshot) => {
         const transactionsData: Transaction[] = [];
         querySnapshot.forEach((doc) => {
@@ -70,7 +70,23 @@ export function RecentTransactions() {
       }
     );
 
-    return () => unsubscribe();
+    const accQuery = query(
+      collection(db, "accounts"),
+      where("userId", "==", user.uid)
+    );
+    const unsubAccounts = onSnapshot(accQuery, (snapshot) => {
+      const accsMap = new Map<string, string>();
+      snapshot.forEach((doc) => {
+        const account = doc.data() as Omit<Account, "id">;
+        accsMap.set(doc.id, account.name);
+      });
+      setAccounts(accsMap);
+    });
+
+    return () => {
+      unsubTransactions();
+      unsubAccounts();
+    };
   }, [user]);
 
   if (loading) {
@@ -133,11 +149,10 @@ export function RecentTransactions() {
                       </div>
                       <div>
                         <p className="font-medium">{transaction.description}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {new Date(
-                            transaction.date.seconds * 1000
-                          ).toLocaleDateString("it-IT")}
-                        </p>
+                        <div className="text-sm text-muted-foreground flex items-center gap-1">
+                          <Landmark className="h-3 w-3" />
+                          <span>{accounts.get(transaction.accountId) || "Sconosciuto"}</span>
+                        </div>
                       </div>
                     </div>
                   </TableCell>
@@ -159,9 +174,10 @@ export function RecentTransactions() {
             </TableBody>
           </Table>
         ) : (
-          <p className="text-center text-muted-foreground py-8">
-            Nessuna transazione ancora. Aggiungine una per iniziare!
-          </p>
+           <div className="text-center text-muted-foreground py-8">
+            <p>Nessuna transazione ancora.</p>
+            <p className="text-xs">Aggiungine una per iniziare!</p>
+          </div>
         )}
       </CardContent>
     </Card>

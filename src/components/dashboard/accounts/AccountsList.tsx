@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useState, Fragment } from "react";
+import React, { useEffect, useState, useMemo, Fragment } from "react";
+import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import type { Account } from "@/types";
 import { collection, query, where, onSnapshot, writeBatch, getDocs, doc, deleteDoc, type Firestore, type Query } from "firebase/firestore";
@@ -8,7 +9,7 @@ import { db } from "@/lib/firebase";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Landmark, MoreHorizontal, Edit, BookUp, Trash2, ChevronDown } from "lucide-react";
+import { Landmark, MoreHorizontal, Edit, BookCopy, Trash2, ChevronDown, Search } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
@@ -18,12 +19,14 @@ import { DeleteAccountDialog } from "./DeleteAccountDialog";
 import { useToast } from "@/hooks/use-toast";
 import { AccountTrendChart } from "./AccountTrendChart";
 import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
 
 export function AccountsList() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [settingBalanceAccount, setSettingBalanceAccount] = useState<Account | null>(null);
   const [deletingAccount, setDeletingAccount] = useState<Account | null>(null);
@@ -51,7 +54,7 @@ export function AccountsList() {
         querySnapshot.forEach((doc) => {
           accountsData.push({ id: doc.id, ...doc.data() } as Account);
         });
-        accountsData.sort((a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0));
+        accountsData.sort((a, b) => (b.createdAt.seconds) - (a.createdAt.seconds));
         setAccounts(accountsData);
         setLoading(false);
       },
@@ -63,6 +66,13 @@ export function AccountsList() {
 
     return () => unsubscribe();
   }, [user]);
+
+  const filteredAccounts = useMemo(() => {
+    if (!searchTerm) return accounts;
+    return accounts.filter(account => 
+      account.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [accounts, searchTerm]);
 
   const handleDeleteAccount = async (accountId: string) => {
     if (!user) {
@@ -127,6 +137,15 @@ export function AccountsList() {
           <CardDescription>
             Elenco di tutti i tuoi conti registrati. Clicca la freccia per vederne l'andamento.
           </CardDescription>
+          <div className="relative pt-2">
+             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+             <Input 
+                placeholder="Cerca conto..."
+                className="pl-9"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+             />
+          </div>
         </CardHeader>
         <CardContent>
           {accounts.length > 0 ? (
@@ -141,13 +160,13 @@ export function AccountsList() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {accounts.map((account) => (
+                {filteredAccounts.length > 0 ? filteredAccounts.map((account) => (
                   <Fragment key={account.id}>
                     <TableRow>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar className="rounded-md h-10 w-10">
-                            <AvatarImage src={account.iconUrl || undefined} alt={account.name} />
+                            <AvatarImage src={account.iconUrl || undefined} alt={account.name} className="object-cover"/>
                             <AvatarFallback className="rounded-md bg-muted">
                                 <Landmark className="h-5 w-5 text-muted-foreground" />
                             </AvatarFallback>
@@ -181,8 +200,14 @@ export function AccountsList() {
                                   <span>Modifica Conto</span>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onSelect={() => setSettingBalanceAccount(account)}>
-                                  <BookUp className="mr-2 h-4 w-4" />
+                                  <BookCopy className="mr-2 h-4 w-4" />
                                   <span>Imposta Saldo a Data</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                  <Link href={`/dashboard/balances/${account.id}`}>
+                                    <BookCopy className="mr-2 h-4 w-4" />
+                                    <span>Gestisci Saldi Storici</span>
+                                  </Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem onSelect={() => setDeletingAccount(account)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
@@ -194,14 +219,20 @@ export function AccountsList() {
                       </TableCell>
                     </TableRow>
                      {expandedAccountId === account.id && (
-                        <TableRow className="bg-muted/5 hover:bg-muted/5 animate-in fade-in-50">
+                        <TableRow className="bg-muted/50 hover:bg-muted/50 animate-in fade-in-50">
                             <TableCell colSpan={5} className="p-2 md:p-4">
                                 <AccountTrendChart account={account} />
                             </TableCell>
                         </TableRow>
                     )}
                   </Fragment>
-                ))}
+                )) : (
+                   <TableRow>
+                      <TableCell colSpan={5} className="h-24 text-center">
+                        Nessun conto trovato per "{searchTerm}".
+                      </TableCell>
+                    </TableRow>
+                )}
               </TableBody>
             </Table>
           ) : (

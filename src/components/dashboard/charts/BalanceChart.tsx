@@ -136,9 +136,13 @@ export function BalanceChart() {
           return startingBalance + balanceChange;
       };
 
+      // Find the absolute oldest date from all data points
       let oldestDate = new Date();
       allAccounts.forEach(acc => {
         if (isBefore(acc.createdAt.toDate(), oldestDate)) oldestDate = acc.createdAt.toDate();
+      });
+      allSnapshots.forEach(snap => {
+        if (isBefore(snap.date.toDate(), oldestDate)) oldestDate = snap.date.toDate();
       });
       
       const today = startOfDay(new Date());
@@ -198,7 +202,7 @@ export function BalanceChart() {
     return <Skeleton className="w-full h-80" />;
   }
 
-  if (chartData.length === 0) {
+  if (chartData.length <= 1) {
       return (
           <Card>
               <CardHeader>
@@ -211,7 +215,7 @@ export function BalanceChart() {
                   </CardDescription>
               </CardHeader>
               <CardContent className="h-80 flex items-center justify-center">
-                  <p className="text-muted-foreground">Aggiungi un conto per visualizzare l'andamento.</p>
+                  <p className="text-muted-foreground">Dati insufficienti per visualizzare il grafico.</p>
               </CardContent>
           </Card>
       );

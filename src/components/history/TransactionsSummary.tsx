@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -48,34 +49,34 @@ export function TransactionsSummary({ timeframe }: TransactionsSummaryProps) {
   return (
     <div className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Totale Entrate</CardTitle>
-                    <ArrowUpRight className="h-4 w-4 text-success" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-2xl font-bold text-success">
+            <div className="bg-success text-success-foreground rounded-lg p-6 shadow-lg">
+                <div className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <div className="text-sm font-medium">Totale Entrate</div>
+                    <ArrowUpRight className="h-4 w-4" />
+                </div>
+                <div>
+                    <div className="text-2xl font-bold">
                         +€{summary.totalIncome.toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                     </div>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-success-foreground/80">
                         {timeframe === 'month' ? "Questo mese" : "Ultimo anno"}
                     </p>
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Totale Spese</CardTitle>
-                    <ArrowDownLeft className="h-4 w-4 text-destructive" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-2xl font-bold text-destructive">
+                </div>
+            </div>
+             <div className="bg-destructive text-destructive-foreground rounded-lg p-6 shadow-lg">
+                <div className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <div className="text-sm font-medium">Totale Spese</div>
+                    <ArrowDownLeft className="h-4 w-4" />
+                </div>
+                <div>
+                    <div className="text-2xl font-bold">
                         -€{summary.totalExpense.toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                     </div>
-                     <p className="text-xs text-muted-foreground">
+                     <p className="text-xs text-destructive-foreground/80">
                         {timeframe === 'month' ? "Questo mese" : "Ultimo anno"}
                     </p>
-                </CardContent>
-            </Card>
+                </div>
+            </div>
         </div>
 
         <Collapsible open={isOpen} onOpenChange={setIsOpen}>

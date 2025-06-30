@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { run } from "@genkit-ai/next/client";
 import { savingsAdvisor } from "@/ai/flows/savingsAdvisor";
 import {
   Card,
@@ -57,7 +56,7 @@ export function SavingsAdvisor() {
     setError("");
     setSuggestion("");
     try {
-      const result = await run(savingsAdvisor, transactions);
+      const result = await savingsAdvisor(transactions);
       setSuggestion(result);
     } catch (err) {
       setError("Spiacente, non sono riuscito a generare un suggerimento in questo momento.");

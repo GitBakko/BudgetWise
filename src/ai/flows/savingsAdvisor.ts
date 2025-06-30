@@ -1,11 +1,12 @@
-import {defineFlow} from 'genkit';
+'use server';
+
 import {z} from 'zod';
 import {ai} from '../genkit';
 import {Transaction} from '@/types';
 
-export const savingsAdvisor = defineFlow(
+const savingsAdvisorFlow = ai.defineFlow(
   {
-    name: 'savingsAdvisor',
+    name: 'savingsAdvisorFlow',
     inputSchema: z.custom<Transaction[]>(),
     outputSchema: z.string(),
   },
@@ -33,6 +34,12 @@ export const savingsAdvisor = defineFlow(
       },
     });
 
-    return llmResponse.text();
+    return llmResponse.text;
   }
 );
+
+export async function savingsAdvisor(
+  transactions: Transaction[]
+): Promise<string> {
+  return await savingsAdvisorFlow(transactions);
+}

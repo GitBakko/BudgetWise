@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import type { Account } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useDebounce } from "use-debounce";
+import { FastAverageColor } from 'fast-average-color';
 
 import { generateAccountIcon } from "@/ai/flows/generateIconFlow";
 
@@ -55,6 +56,7 @@ const accountSchema = z.object({
     .number()
     .min(0, { message: "Il saldo iniziale non può essere negativo." }),
   iconUrl: z.string().optional(),
+  color: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof accountSchema>;
@@ -173,11 +175,27 @@ export function AddAccountDialog() {
       name: "",
       initialBalance: 0,
       iconUrl: "",
+      color: "#3F51B5",
     },
   });
 
   const accountNameValue = form.watch("name");
   const [debouncedAccountName] = useDebounce(accountNameValue, 1000);
+  const fac = new FastAverageColor();
+
+  const setIcon = (url: string) => {
+    setIconPreview(url);
+    form.setValue("iconUrl", url, { shouldDirty: true });
+    fac.getColorAsync(url)
+        .then(color => {
+            if (color.hex) {
+                form.setValue('color', color.hex, { shouldDirty: true });
+            }
+        })
+        .catch(e => {
+            console.error("Error getting dominant color", e);
+        });
+  }
 
   const handleRegenerateIcon = async () => {
     const name = form.getValues("name");
@@ -193,8 +211,7 @@ export function AddAccountDialog() {
     try {
       const url = await generateAccountIcon(name);
       setAiIconUrl(url);
-      setIconPreview(url);
-      form.setValue("iconUrl", url, { shouldDirty: true });
+      setIcon(url);
     } catch (error) {
       console.error("Failed to regenerate icon:", error);
       toast({
@@ -227,8 +244,7 @@ export function AddAccountDialog() {
           try {
             const url = await generateAccountIcon(debouncedAccountName);
             setAiIconUrl(url);
-            setIconPreview(url);
-            form.setValue("iconUrl", url);
+            setIcon(url);
           } catch (error) {
             console.error("Failed to generate icon:", error);
           } finally {
@@ -309,8 +325,7 @@ export function AddAccountDialog() {
             const trimmedDataUrl = await trimImage(dataUrl);
             setIconLoading(false);
 
-            setIconPreview(trimmedDataUrl);
-            form.setValue("iconUrl", trimmedDataUrl, { shouldDirty: true });
+            setIcon(trimmedDataUrl);
         };
         reader.readAsDataURL(file);
     } else if (file) {
@@ -319,8 +334,7 @@ export function AddAccountDialog() {
   };
 
   const handleResetIcon = () => {
-    setIconPreview(aiIconUrl);
-    form.setValue("iconUrl", aiIconUrl);
+    setIcon(aiIconUrl);
     if(fileInputRef.current) {
         fileInputRef.current.value = "";
     }
@@ -330,7 +344,7 @@ export function AddAccountDialog() {
     if (loading && !isOpen) return;
     setOpen(isOpen);
     if (!isOpen) {
-      form.reset({ name: "", initialBalance: 0, iconUrl: "" });
+      form.reset({ name: "", initialBalance: 0, iconUrl: "", color: "#3F51B5" });
       setIconPreview("");
       setAiIconUrl("");
       setIconLoading(false);
@@ -373,6 +387,7 @@ export function AddAccountDialog() {
                           <AvatarImage
                             src={iconPreview || undefined}
                             alt="Anteprima icona conto"
+                            className="object-cover"
                           />
                           <AvatarFallback className="rounded-md bg-muted">
                             <Landmark className="h-8 w-8 text-muted-foreground" />
@@ -411,19 +426,34 @@ export function AddAccountDialog() {
                 />
               </div>
             </div>
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome Conto</FormLabel>
-                  <FormControl>
-                    <Input placeholder="es. Conto Corrente" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+             <div className="grid grid-cols-3 gap-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel>Nome Conto</FormLabel>
+                      <FormControl>
+                        <Input placeholder="es. Conto Corrente" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                    control={form.control}
+                    name="color"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Colore</FormLabel>
+                            <FormControl>
+                                <Input type="color" {...field} className="p-1 h-10"/>
+                            </FormControl>
+                             <FormMessage />
+                        </FormItem>
+                    )}
+                />
+            </div>
             <FormField
               control={form.control}
               name="initialBalance"

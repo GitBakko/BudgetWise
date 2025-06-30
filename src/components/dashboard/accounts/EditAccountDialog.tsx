@@ -9,6 +9,7 @@ import { db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";
 import type { Account } from "@/types";
 import { useToast } from "@/hooks/use-toast";
+import { FastAverageColor } from 'fast-average-color';
 
 import { generateAccountIcon } from "@/ai/flows/generateIconFlow";
 
@@ -40,7 +41,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Landmark, Loader2, Upload, RefreshCw } from "lucide-react";
 
 
@@ -52,6 +52,7 @@ const accountSchema = z.object({
     .number()
     .min(0, { message: "Il saldo iniziale non può essere negativo." }),
   iconUrl: z.string().optional(),
+  color: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof accountSchema>;
@@ -169,12 +170,15 @@ export function EditAccountDialog({ account, open, onOpenChange }: EditAccountDi
     suggestedName: string;
   } | null>(null);
 
+  const fac = new FastAverageColor();
+
   const form = useForm<FormValues>({
     resolver: zodResolver(accountSchema),
     defaultValues: {
       name: account.name,
       initialBalance: account.initialBalance,
       iconUrl: account.iconUrl || "",
+      color: account.color || "#3F51B5",
     },
   });
   
@@ -184,6 +188,7 @@ export function EditAccountDialog({ account, open, onOpenChange }: EditAccountDi
           name: account.name,
           initialBalance: account.initialBalance,
           iconUrl: account.iconUrl || "",
+          color: account.color || "#3F51B5",
       });
       setIconPreview(account.iconUrl);
     }
@@ -200,6 +205,20 @@ export function EditAccountDialog({ account, open, onOpenChange }: EditAccountDi
     fetchAccounts();
   }, [user, open]);
 
+  const setIcon = (url: string) => {
+    setIconPreview(url);
+    form.setValue("iconUrl", url, { shouldDirty: true });
+    fac.getColorAsync(url)
+        .then(color => {
+            if (color.hex) {
+                form.setValue('color', color.hex, { shouldDirty: true });
+            }
+        })
+        .catch(e => {
+            console.error("Error getting dominant color", e);
+        });
+  }
+
   const handleRegenerateIcon = async () => {
     const name = form.getValues("name");
     if (!name || name.length < 3) {
@@ -214,8 +233,7 @@ export function EditAccountDialog({ account, open, onOpenChange }: EditAccountDi
     setIconLoading(true);
     try {
       const url = await generateAccountIcon(name);
-      setIconPreview(url);
-      form.setValue("iconUrl", url, { shouldDirty: true });
+      setIcon(url);
     } catch (error) {
       console.error("Failed to regenerate icon:", error);
       toast({
@@ -244,6 +262,7 @@ export function EditAccountDialog({ account, open, onOpenChange }: EditAccountDi
         name: values.name,
         initialBalance: values.initialBalance,
         iconUrl: values.iconUrl || "",
+        color: values.color || "",
       });
       toast({
         title: "Successo!",
@@ -296,8 +315,7 @@ export function EditAccountDialog({ account, open, onOpenChange }: EditAccountDi
             const trimmedDataUrl = await trimImage(dataUrl);
             setIconLoading(false);
 
-            setIconPreview(trimmedDataUrl);
-            form.setValue("iconUrl", trimmedDataUrl, { shouldDirty: true });
+            setIcon(trimmedDataUrl);
         };
         reader.readAsDataURL(file);
     } else if (file) {
@@ -333,7 +351,7 @@ export function EditAccountDialog({ account, open, onOpenChange }: EditAccountDi
                                 </div>
                             ) : (
                                 <>
-                                    <AvatarImage src={iconPreview || undefined} alt={account.name} />
+                                    <AvatarImage src={iconPreview || undefined} alt={account.name} className="object-cover" />
                                     <AvatarFallback className="rounded-md bg-muted">
                                         <Landmark className="h-8 w-8 text-muted-foreground" />
                                     </AvatarFallback>
@@ -362,19 +380,34 @@ export function EditAccountDialog({ account, open, onOpenChange }: EditAccountDi
                     />
                 </div>
             </div>
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome Conto</FormLabel>
-                  <FormControl>
-                    <Input placeholder="es. Conto Corrente" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+             <div className="grid grid-cols-3 gap-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel>Nome Conto</FormLabel>
+                      <FormControl>
+                        <Input placeholder="es. Conto Corrente" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                    control={form.control}
+                    name="color"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Colore</FormLabel>
+                            <FormControl>
+                                <Input type="color" {...field} className="p-1 h-10"/>
+                            </FormControl>
+                             <FormMessage />
+                        </FormItem>
+                    )}
+                />
+            </div>
             <FormField
               control={form.control}
               name="initialBalance"

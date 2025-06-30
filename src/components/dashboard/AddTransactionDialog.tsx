@@ -159,6 +159,9 @@ export function AddTransactionDialog() {
     }
   };
 
+  const selectedAccountId = form.watch("accountId");
+  const selectedAccount = accounts.find(a => a.id === selectedAccountId);
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -226,13 +229,25 @@ export function AddTransactionDialog() {
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Seleziona un conto" />
+                        <SelectValue>
+                           {selectedAccount ? (
+                                <div className="flex items-center gap-2">
+                                    {selectedAccount.color && <div className="h-2 w-2 rounded-full" style={{ backgroundColor: selectedAccount.color }} />}
+                                    <span>{selectedAccount.name}</span>
+                                </div>
+                            ) : (
+                                "Seleziona un conto"
+                            )}
+                        </SelectValue>
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {accounts.map((acc) => (
                         <SelectItem key={acc.id} value={acc.id}>
-                          {acc.name}
+                          <div className="flex items-center gap-2">
+                            {acc.color && <div className="h-2 w-2 rounded-full" style={{ backgroundColor: acc.color }} />}
+                            <span>{acc.name}</span>
+                          </div>
                         </SelectItem>
                       ))}
                     </SelectContent>

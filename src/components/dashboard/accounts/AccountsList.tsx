@@ -198,7 +198,10 @@ export function AccountsList() {
                                 <Landmark className="h-5 w-5 text-muted-foreground" />
                             </AvatarFallback>
                           </Avatar>
-                          <span className="font-medium">{account.name}</span>
+                          <div className="flex items-center gap-2">
+                             {account.color && <div className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: account.color }} />}
+                            <span className="font-medium">{account.name}</span>
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell>

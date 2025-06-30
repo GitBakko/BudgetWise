@@ -31,10 +31,15 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 
+type AccountInfo = {
+    name: string;
+    color?: string;
+}
+
 export function TransactionsTable() {
   const { user } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [accounts, setAccounts] = useState<Map<string, string>>(new Map());
+  const [accounts, setAccounts] = useState<Map<string, AccountInfo>>(new Map());
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<"all" | "income" | "expense">(
@@ -78,10 +83,10 @@ export function TransactionsTable() {
       where("userId", "==", user.uid)
     );
     const unsubAccounts = onSnapshot(accQuery, (snapshot) => {
-      const accsMap = new Map<string, string>();
+      const accsMap = new Map<string, AccountInfo>();
       snapshot.forEach((doc) => {
         const account = doc.data() as Omit<Account, 'id'>;
-        accsMap.set(doc.id, account.name);
+        accsMap.set(doc.id, {name: account.name, color: account.color});
       });
       setAccounts(accsMap);
     });
@@ -145,36 +150,42 @@ export function TransactionsTable() {
           </TableHeader>
           <TableBody>
             {filteredTransactions.length > 0 ? (
-              filteredTransactions.map((transaction) => (
-                <TableRow key={transaction.id}>
-                  <TableCell className="font-medium">
-                    {transaction.description}
-                  </TableCell>
-                  <TableCell>
-                    {accounts.get(transaction.accountId) || "Sconosciuto"}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="capitalize">
-                      {transaction.category}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {new Date(
-                      transaction.date.seconds * 1000
-                    ).toLocaleDateString("it-IT")}
-                  </TableCell>
-                  <TableCell
-                    className={`text-right font-semibold ${
-                      transaction.type === "income"
-                        ? "text-success"
-                        : "text-destructive"
-                    }`}
-                  >
-                    {transaction.type === "income" ? "+" : "-"}
-                    €{transaction.amount.toFixed(2)}
-                  </TableCell>
-                </TableRow>
-              ))
+              filteredTransactions.map((transaction) => {
+                const accountInfo = accounts.get(transaction.accountId);
+                return (
+                    <TableRow key={transaction.id}>
+                    <TableCell className="font-medium">
+                        {transaction.description}
+                    </TableCell>
+                    <TableCell>
+                        <div className="flex items-center gap-2">
+                           {accountInfo?.color && <div className="h-2 w-2 rounded-full" style={{backgroundColor: accountInfo.color}} />}
+                           <span>{accountInfo?.name || "Sconosciuto"}</span>
+                        </div>
+                    </TableCell>
+                    <TableCell>
+                        <Badge variant="outline" className="capitalize">
+                        {transaction.category}
+                        </Badge>
+                    </TableCell>
+                    <TableCell>
+                        {new Date(
+                        transaction.date.seconds * 1000
+                        ).toLocaleDateString("it-IT")}
+                    </TableCell>
+                    <TableCell
+                        className={`text-right font-semibold ${
+                        transaction.type === "income"
+                            ? "text-success"
+                            : "text-destructive"
+                        }`}
+                    >
+                        {transaction.type === "income" ? "+" : "-"}
+                        €{transaction.amount.toFixed(2)}
+                    </TableCell>
+                    </TableRow>
+                )
+                })
             ) : (
               <TableRow>
                 <TableCell

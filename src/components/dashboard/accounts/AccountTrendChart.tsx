@@ -9,6 +9,7 @@ import {
   startOfDay, 
   format, 
   isAfter,
+  isBefore,
   differenceInDays,
   subDays,
   addDays,
@@ -41,13 +42,13 @@ const getChartTimeSettings = (oldestDate: Date, newestDate: Date) => {
         return {
             startDate: startOfMonth(oldestDate),
             increment: (d: Date) => addMonths(d, 1),
-            format: "MMM 'yy"
+            format: "MMM yy"
         };
     } else if (daysDiff <= 365 * 3) { // Up to 3 years -> quarterly
         return {
             startDate: startOfQuarter(oldestDate),
             increment: (d: Date) => addQuarters(d, 1),
-            format: (d: Date) => `Q${Math.floor((d.getMonth() + 3) / 3)} '${format(d, 'yy')}`
+            format: (d: Date) => `Q${Math.floor((d.getMonth() + 3) / 3)} ${format(d, 'yy')}`
         };
     } else { // More than 3 years -> yearly
         return {
@@ -66,7 +67,7 @@ export function AccountTrendChart({ account }: AccountTrendChartProps) {
     const chartConfig = {
         [account.name]: {
             label: account.name,
-            color: "hsl(var(--chart-1))",
+            color: account.color || "hsl(var(--chart-1))",
         },
     } satisfies ChartConfig;
 
@@ -108,7 +109,17 @@ export function AccountTrendChart({ account }: AccountTrendChartProps) {
             };
             
             const today = startOfDay(new Date());
-            const oldestDate = startOfDay(account.createdAt.toDate());
+            
+            // Determine the oldest data point between account creation and oldest snapshot
+            let oldestDate = startOfDay(account.createdAt.toDate());
+            if (accountSnapshots.length > 0) {
+                const oldestSnapshotDate = accountSnapshots.reduce((oldest, s) => {
+                    return isBefore(s.date.toDate(), oldest) ? s.date.toDate() : oldest;
+                }, accountSnapshots[0].date.toDate());
+                if (isBefore(oldestSnapshotDate, oldestDate)) {
+                    oldestDate = oldestSnapshotDate;
+                }
+            }
             
             const settings = getChartTimeSettings(oldestDate, today);
             
@@ -151,7 +162,7 @@ export function AccountTrendChart({ account }: AccountTrendChartProps) {
         return <div className="h-56 w-full bg-muted animate-pulse rounded-lg" />;
     }
 
-    if (chartData.length === 0) {
+    if (chartData.length <= 1) {
         return (
              <Card className="border-dashed bg-transparent shadow-none">
                 <CardHeader className="p-4">
@@ -159,7 +170,7 @@ export function AccountTrendChart({ account }: AccountTrendChartProps) {
                     <CardDescription className="text-xs">Andamento nel tempo</CardDescription>
                 </CardHeader>
                 <CardContent className="h-48 w-full p-0 pr-2 flex items-center justify-center">
-                    <p className="text-sm text-muted-foreground">Nessun dato per generare il grafico.</p>
+                    <p className="text-sm text-muted-foreground">Dati insufficienti per generare il grafico.</p>
                 </CardContent>
             </Card>
         )
@@ -176,8 +187,8 @@ export function AccountTrendChart({ account }: AccountTrendChartProps) {
                     <AreaChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
                         <defs>
                             <linearGradient id={`fill-${account.id.replace(/[^a-zA-Z0-9]/g, '')}`} x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.8} />
-                                <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.1} />
+                                <stop offset="5%" stopColor={chartConfig[account.name]?.color} stopOpacity={0.8} />
+                                <stop offset="95%" stopColor={chartConfig[account.name]?.color} stopOpacity={0.1} />
                             </linearGradient>
                         </defs>
                         <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={10} fontSize={12} />
@@ -201,7 +212,7 @@ export function AccountTrendChart({ account }: AccountTrendChartProps) {
                         <Area
                             dataKey={account.name}
                             type="monotone"
-                            stroke="hsl(var(--chart-1))"
+                            stroke={chartConfig[account.name]?.color}
                             fill={`url(#fill-${account.id.replace(/[^a-zA-Z0-9]/g, '')})`}
                             strokeWidth={2}
                             dot={{r: 0}}

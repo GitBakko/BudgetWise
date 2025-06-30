@@ -19,6 +19,7 @@ export type Account = {
   initialBalance: number;
   createdAt: Timestamp;
   iconUrl?: string;
+  color?: string;
 };
 
 export type BalanceSnapshot = {

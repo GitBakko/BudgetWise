@@ -43,13 +43,13 @@ const getChartTimeSettings = (oldestDate: Date, newestDate: Date) => {
         return {
             startDate: startOfMonth(oldestDate),
             increment: (d: Date) => addMonths(d, 1),
-            format: "MMM 'yy"
+            format: "MMM yy"
         };
     } else if (daysDiff <= 365 * 3) { // Up to 3 years -> quarterly
         return {
             startDate: startOfQuarter(oldestDate),
             increment: (d: Date) => addQuarters(d, 1),
-            format: (d: Date) => `Q${Math.floor((d.getMonth() + 3) / 3)} '${format(d, 'yy')}`
+            format: (d: Date) => `Q${Math.floor((d.getMonth() + 3) / 3)} ${format(d, 'yy')}`
         };
     } else { // More than 3 years -> yearly
         return {
@@ -90,13 +90,6 @@ export function BalanceChart() {
           return;
       }
       
-      // Setup Chart Config
-      const config: ChartConfig = {
-        "Saldo Totale": {
-          label: "Saldo Totale",
-          color: "hsl(var(--primary))",
-        },
-      };
       const accountColors = [
           "hsl(var(--chart-1))",
           "hsl(var(--chart-2))",
@@ -104,10 +97,18 @@ export function BalanceChart() {
           "hsl(var(--chart-4))",
           "hsl(var(--chart-5))",
       ];
+
+      // Setup Chart Config
+      const config: ChartConfig = {
+        "Saldo Totale": {
+          label: "Saldo Totale",
+          color: "hsl(var(--primary))",
+        },
+      };
       allAccounts.forEach((account, index) => {
         config[account.name] = {
           label: account.name,
-          color: accountColors[index % accountColors.length],
+          color: account.color || accountColors[index % accountColors.length],
         };
       });
       setChartConfig(config);
@@ -237,7 +238,7 @@ export function BalanceChart() {
             <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 30, bottom: 0 }}>
                  {Object.keys(chartConfig).map((key) => (
                     <defs key={`def-${key}`}>
-                        <linearGradient id={`fill-${key.replace(/\s/g, '')}`} x1="0" y1="0" x2="0" y2="1">
+                        <linearGradient id={`fill-balance-chart-${key.replace(/[^a-zA-Z0-9]/g, '')}`} x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor={chartConfig[key].color} stopOpacity={0.8} />
                         <stop offset="95%" stopColor={chartConfig[key].color} stopOpacity={0.1} />
                         </linearGradient>
@@ -269,10 +270,11 @@ export function BalanceChart() {
                             dataKey={key}
                             type="monotone"
                             stroke={chartConfig[key].color}
-                            fill={`url(#fill-${key.replace(/\s/g, '')})`}
+                            fill={`url(#fill-balance-chart-${key.replace(/[^a-zA-Z0-9]/g, '')})`}
                             strokeWidth={isTotal ? 2.5 : 1.5}
                             strokeDasharray={isTotal ? "0" : "5 5"}
                             dot={false}
+                            activeDot={{ r: 4, strokeWidth: 1, fill: "hsl(var(--background))" }}
                         />
                     )
                 })}

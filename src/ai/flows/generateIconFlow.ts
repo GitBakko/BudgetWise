@@ -37,17 +37,18 @@ const generateIconFlow = ai.defineFlow(
     // Step 2: If no official logo is found, use AI to generate a custom one.
     const {media} = await ai.generate({
       model: 'googleai/gemini-2.0-flash-preview-image-generation',
-      prompt: `You are an expert logo designer for a financial app. Your task is to create a high-quality, circular icon for a personal account.
+      prompt: `You are an expert logo designer for a financial app. Your task is to create a high-quality, square icon with rounded corners (like an iOS app icon) for a personal account.
 
 The account name is: "${accountName}".
 
-Generate a simple, clean, modern, vector-style icon that represents the concept of the account name. The icon should be white, placed on a pleasant, solid-colored circular background.
+Generate a simple, clean, modern, vector-style icon that represents the concept of the account name. The icon should be a single, clear symbol.
 
 **CRITICAL DESIGN RULES (APPLY TO ALL ICONS):**
-- **Shape**: The final output MUST be a single, perfect circle.
-- **Borders**: Do NOT add any borders, strokes, or outlines around the circle. The edge should be clean.
-- **Text**: Do NOT include any text in the icon.
-- **Size**: The icon within the circle should be appropriately sized to fill the space without being cramped.`,
+- **Shape**: The final output MUST be a single, solid-colored square with rounded corners (similar to an iOS app icon).
+- **Content Fit**: The symbol inside the square must be large and centered, filling the space appropriately without looking cramped. Avoid excessive empty padding or whitespace around the symbol.
+- **Background**: The background of the square should be a single, pleasant, solid color. The symbol on top should be a contrasting color (e.g., white).
+- **Borders**: Do NOT add any extra borders, strokes, or outlines around the main square shape. The edge must be clean.
+- **Text**: Do NOT include any text, letters, or numbers in the icon.`,
       config: {
         responseModalities: ['TEXT', 'IMAGE'],
       },

@@ -239,20 +239,20 @@ export function EditAccountDialog({ account, open, onOpenChange }: EditAccountDi
             <div className="space-y-2">
               <FormLabel>Icona Conto</FormLabel>
                 <div className="flex items-center gap-4">
-                    <button type="button" onClick={() => fileInputRef.current?.click()} className="relative group rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-                        <Avatar className="h-16 w-16">
+                    <button type="button" onClick={() => fileInputRef.current?.click()} className="relative group rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                        <Avatar className="h-16 w-16 rounded-lg">
                            {iconLoading ? (
-                                <Skeleton className="h-full w-full rounded-full" />
+                                <Skeleton className="h-full w-full rounded-lg" />
                             ) : (
                                 <>
                                     <AvatarImage src={iconPreview || undefined} alt={account.name} />
-                                    <AvatarFallback>
+                                    <AvatarFallback className="rounded-lg">
                                         <Landmark className="h-8 w-8 text-muted-foreground" />
                                     </AvatarFallback>
                                 </>
                             )}
                         </Avatar>
-                        <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity">
+                        <div className="absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center text-white opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity">
                             <Upload className="h-6 w-6"/>
                         </div>
                     </button>

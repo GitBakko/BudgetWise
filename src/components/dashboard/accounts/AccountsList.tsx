@@ -138,9 +138,9 @@ export function AccountsList() {
                   <TableRow key={account.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <Avatar>
+                        <Avatar className="rounded-lg">
                           <AvatarImage src={account.iconUrl || undefined} alt={account.name} />
-                          <AvatarFallback>
+                          <AvatarFallback className="rounded-lg">
                               <Landmark className="h-5 w-5 text-muted-foreground" />
                           </AvatarFallback>
                         </Avatar>

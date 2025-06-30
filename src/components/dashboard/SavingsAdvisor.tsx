@@ -60,7 +60,7 @@ export function SavingsAdvisor() {
       const result = await run(savingsAdvisor, transactions);
       setSuggestion(result);
     } catch (err) {
-      setError("Sorry, I couldn't generate a suggestion right now.");
+      setError("Spiacente, non sono riuscito a generare un suggerimento in questo momento.");
       console.error(err);
     } finally {
       setLoading(false);
@@ -83,10 +83,10 @@ export function SavingsAdvisor() {
       <CardHeader>
         <div className="flex items-center gap-2">
             <BrainCircuit className="h-6 w-6 text-primary" />
-            <CardTitle>AI Savings Advisor</CardTitle>
+            <CardTitle>Consulente AI per il Risparmio</CardTitle>
         </div>
         <CardDescription>
-          Get personalized tips to improve your savings.
+          Ottieni consigli personalizzati per migliorare i tuoi risparmi.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -106,17 +106,17 @@ export function SavingsAdvisor() {
           </div>
         )}
         {!suggestion && !loading && (
-            <p className="text-sm text-muted-foreground">Click the button to analyze your recent expenses and get savings tips.</p>
+            <p className="text-sm text-muted-foreground">Clicca il pulsante per analizzare le tue spese recenti e ottenere consigli di risparmio.</p>
         )}
         <Button
           onClick={handleGetSuggestion}
           disabled={loading || transactions.length === 0}
           className="w-full"
         >
-          {loading ? "Analyzing..." : "Analyze My Spending"}
+          {loading ? "Analisi in corso..." : "Analizza le Mie Spese"}
         </Button>
         {transactions.length === 0 && !loading && (
-            <p className="text-xs text-center text-muted-foreground">Add some expense transactions to enable analysis.</p>
+            <p className="text-xs text-center text-muted-foreground">Aggiungi alcune transazioni di spesa per abilitare l'analisi.</p>
         )}
       </CardContent>
     </Card>

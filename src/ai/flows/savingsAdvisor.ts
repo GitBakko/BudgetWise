@@ -11,17 +11,17 @@ export const savingsAdvisor = defineFlow(
   },
   async transactions => {
     if (!transactions || transactions.length === 0) {
-      return "I don't have any transaction data to analyze. Please add some expenses to get savings suggestions.";
+      return "Non ho dati sulle transazioni da analizzare. Aggiungi alcune spese per ottenere suggerimenti di risparmio.";
     }
 
-    const prompt = `You are a friendly and helpful financial advisor.
-    Based on the following user transactions, provide 2-3 actionable and personalized savings suggestions.
-    Keep the tone encouraging and positive. Format the output as a markdown list.
+    const prompt = `Sei un consulente finanziario amichevole e disponibile. 
+    Basandoti sulle seguenti transazioni dell'utente, fornisci 2-3 suggerimenti di risparmio attuabili e personalizzati. 
+    Mantieni un tono incoraggiante e positivo. Formatta l'output come una lista markdown.
 
-    Transactions:
+    Transazioni:
     ${transactions
       .filter(t => t.type === 'expense')
-      .map(t => `- ${t.description}: $${t.amount.toFixed(2)} (Category: ${t.category})`)
+      .map(t => `- ${t.description}: $${t.amount.toFixed(2)} (Categoria: ${t.category})`)
       .join('\n')}
     `;
 

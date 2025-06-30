@@ -23,14 +23,14 @@ import { UserPlus, Wallet } from "lucide-react";
 
 const signupSchema = z
   .object({
-    email: z.string().email({ message: "Invalid email address." }),
+    email: z.string().email({ message: "Indirizzo email non valido." }),
     password: z
       .string()
-      .min(6, { message: "Password must be at least 6 characters." }),
+      .min(6, { message: "La password deve contenere almeno 6 caratteri." }),
     confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match.",
+    message: "Le password non corrispondono.",
     path: ["confirmPassword"],
   });
 
@@ -54,14 +54,14 @@ export default function SignupPage() {
     try {
       await signup(values.email, values.password);
       toast({
-        title: "Account Created",
-        description: "Welcome to BudgetWise! You are now logged in.",
+        title: "Account Creato",
+        description: "Benvenuto in BudgetWise! Hai effettuato l'accesso.",
       });
       router.push("/dashboard");
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Signup Failed",
+        title: "Registrazione Fallita",
         description: error.message,
       });
     } finally {
@@ -76,9 +76,9 @@ export default function SignupPage() {
            <div className="mx-auto bg-primary text-primary-foreground rounded-full p-3 w-fit mb-4">
             <Wallet className="h-8 w-8" />
           </div>
-          <CardTitle className="text-3xl font-bold text-primary">Create an Account</CardTitle>
+          <CardTitle className="text-3xl font-bold text-primary">Crea un Account</CardTitle>
           <CardDescription>
-            Join BudgetWise and take control of your finances.
+            Unisciti a BudgetWise e prendi il controllo delle tue finanze.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -93,7 +93,7 @@ export default function SignupPage() {
                     <FormControl>
                       <Input
                         type="email"
-                        placeholder="you@example.com"
+                        placeholder="tu@esempio.com"
                         {...field}
                       />
                     </FormControl>
@@ -123,7 +123,7 @@ export default function SignupPage() {
                 name="confirmPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Confirm Password</FormLabel>
+                    <FormLabel>Conferma Password</FormLabel>
                     <FormControl>
                       <Input
                         type="password"
@@ -136,14 +136,14 @@ export default function SignupPage() {
                 )}
               />
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Creating Account..." : "Sign Up"}
+                {loading ? "Creazione account in corso..." : "Registrati"}
               </Button>
             </form>
           </Form>
           <p className="mt-6 text-center text-sm">
-            Already have an account?{" "}
+            Hai già un account?{" "}
             <Link href="/" className="font-medium text-primary hover:underline">
-              Sign in
+              Accedi
             </Link>
           </p>
         </CardContent>

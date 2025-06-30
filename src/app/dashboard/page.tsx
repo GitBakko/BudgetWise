@@ -12,7 +12,7 @@ export default function DashboardPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-muted-foreground">
-            Here's a summary of your financial activity.
+            Ecco un riepilogo della tua attività finanziaria.
           </p>
         </div>
         <AddTransactionDialog />

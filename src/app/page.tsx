@@ -22,10 +22,10 @@ import { useToast } from "@/hooks/use-toast";
 import { DollarSign, Wallet } from "lucide-react";
 
 const loginSchema = z.object({
-  email: z.string().email({ message: "Invalid email address." }),
+  email: z.string().email({ message: "Indirizzo email non valido." }),
   password: z
     .string()
-    .min(6, { message: "Password must be at least 6 characters." }),
+    .min(6, { message: "La password deve contenere almeno 6 caratteri." }),
 });
 
 export default function LoginPage() {
@@ -46,12 +46,12 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(values.email, values.password);
-      toast({ title: "Success", description: "Logged in successfully." });
+      toast({ title: "Successo", description: "Accesso effettuato con successo." });
       router.push("/dashboard");
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Login Failed",
+        title: "Accesso Fallito",
         description: error.message,
       });
     } finally {
@@ -67,7 +67,7 @@ export default function LoginPage() {
             <Wallet className="h-8 w-8" />
           </div>
           <CardTitle className="text-3xl font-bold text-primary">BudgetWise</CardTitle>
-          <p className="text-muted-foreground">Welcome back! Please sign in to your account.</p>
+          <p className="text-muted-foreground">Bentornato! Accedi al tuo account.</p>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -81,7 +81,7 @@ export default function LoginPage() {
                     <FormControl>
                       <Input
                         type="email"
-                        placeholder="you@example.com"
+                        placeholder="tu@esempio.com"
                         {...field}
                       />
                     </FormControl>
@@ -107,14 +107,14 @@ export default function LoginPage() {
                 )}
               />
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Signing In..." : "Sign In"}
+                {loading ? "Accesso in corso..." : "Accedi"}
               </Button>
             </form>
           </Form>
           <p className="mt-6 text-center text-sm">
-            Don't have an account?{" "}
+            Non hai un account?{" "}
             <Link href="/signup" className="font-medium text-primary hover:underline">
-              Sign up
+              Registrati
             </Link>
           </p>
         </CardContent>

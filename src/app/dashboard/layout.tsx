@@ -34,12 +34,12 @@ export default function DashboardLayout({
     },
     {
       href: "/dashboard/history",
-      label: "History",
+      label: "Cronologia",
       icon: History,
     },
     {
       href: "/dashboard/ai-advisor",
-      label: "AI Advisor",
+      label: "Consulente AI",
       icon: BrainCircuit,
     },
   ];

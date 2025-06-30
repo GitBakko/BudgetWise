@@ -50,26 +50,27 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { it } from "date-fns/locale";
 
 const transactionSchema = z.object({
   type: z.enum(["income", "expense"]),
-  amount: z.coerce.number().positive({ message: "Amount must be positive." }),
+  amount: z.coerce.number().positive({ message: "L'importo deve essere positivo." }),
   description: z
     .string()
-    .min(2, { message: "Description must be at least 2 characters." }),
-  category: z.string().min(1, { message: "Please select a category." }),
+    .min(2, { message: "La descrizione deve contenere almeno 2 caratteri." }),
+  category: z.string().min(1, { message: "Seleziona una categoria." }),
   date: z.date(),
 });
 
 const categories = {
-  income: ["Salary", "Bonus", "Gift", "Other"],
+  income: ["Stipendio", "Bonus", "Regalo", "Altro"],
   expense: [
-    "Groceries",
-    "Rent",
-    "Utilities",
-    "Transport",
-    "Entertainment",
-    "Other",
+    "Spesa",
+    "Affitto",
+    "Utenze",
+    "Trasporti",
+    "Intrattenimento",
+    "Altro",
   ],
 };
 
@@ -105,8 +106,8 @@ export function AddTransactionDialog() {
     if (!user) {
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "You must be logged in to add a transaction.",
+        title: "Errore",
+        description: "Devi essere loggato per aggiungere una transazione.",
       });
       return;
     }
@@ -119,8 +120,8 @@ export function AddTransactionDialog() {
         createdAt: serverTimestamp(),
       });
       toast({
-        title: "Success!",
-        description: "Transaction added successfully.",
+        title: "Successo!",
+        description: "Transazione aggiunta con successo.",
       });
       form.reset({
         type: activeTab,
@@ -133,8 +134,8 @@ export function AddTransactionDialog() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Failed to add transaction. Please try again.",
+        title: "Errore",
+        description: "Impossibile aggiungere la transazione. Riprova.",
       });
     } finally {
       setLoading(false);
@@ -146,14 +147,14 @@ export function AddTransactionDialog() {
       <DialogTrigger asChild>
         <Button>
           <PlusCircle className="mr-2 h-4 w-4" />
-          Add Transaction
+          Aggiungi Transazione
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add New Transaction</DialogTitle>
+          <DialogTitle>Aggiungi Nuova Transazione</DialogTitle>
           <DialogDescription>
-            Record a new income or expense to track your finances.
+            Registra una nuova entrata o spesa per monitorare le tue finanze.
           </DialogDescription>
         </DialogHeader>
         <Tabs
@@ -162,8 +163,8 @@ export function AddTransactionDialog() {
           className="w-full"
         >
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="expense">Expense</TabsTrigger>
-            <TabsTrigger value="income">Income</TabsTrigger>
+            <TabsTrigger value="expense">Spesa</TabsTrigger>
+            <TabsTrigger value="income">Entrata</TabsTrigger>
           </TabsList>
         </Tabs>
         <Form {...form}>
@@ -173,7 +174,7 @@ export function AddTransactionDialog() {
               name="amount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Amount</FormLabel>
+                  <FormLabel>Importo</FormLabel>
                   <FormControl>
                     <Input type="number" step="0.01" {...field} />
                   </FormControl>
@@ -186,9 +187,9 @@ export function AddTransactionDialog() {
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel>Descrizione</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Coffee" {...field} />
+                    <Input placeholder="es. Caffè" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -199,14 +200,15 @@ export function AddTransactionDialog() {
               name="category"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Category</FormLabel>
+                  <FormLabel>Categoria</FormLabel>
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
+                    value={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a category" />
+                        <SelectValue placeholder="Seleziona una categoria" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -226,7 +228,7 @@ export function AddTransactionDialog() {
               name="date"
               render={({ field }) => (
                 <FormItem className="flex flex-col">
-                  <FormLabel>Date</FormLabel>
+                  <FormLabel>Data</FormLabel>
                   <Popover>
                     <PopoverTrigger asChild>
                       <FormControl>
@@ -238,9 +240,9 @@ export function AddTransactionDialog() {
                           )}
                         >
                           {field.value ? (
-                            format(field.value, "PPP")
+                            format(field.value, "PPP", { locale: it })
                           ) : (
-                            <span>Pick a date</span>
+                            <span>Scegli una data</span>
                           )}
                           <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                         </Button>
@@ -255,6 +257,7 @@ export function AddTransactionDialog() {
                           date > new Date() || date < new Date("1900-01-01")
                         }
                         initialFocus
+                        locale={it}
                       />
                     </PopoverContent>
                   </Popover>
@@ -263,7 +266,7 @@ export function AddTransactionDialog() {
               )}
             />
             <Button type="submit" disabled={loading} className="w-full">
-              {loading ? "Adding..." : "Add Transaction"}
+              {loading ? "Aggiunta in corso..." : "Aggiungi Transazione"}
             </Button>
           </form>
         </Form>

@@ -6,9 +6,9 @@ export default function AiAdvisorPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">AI Savings Advisor</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Consulente AI per il Risparmio</h1>
         <p className="text-muted-foreground">
-          Let our AI analyze your spending and find ways to save.
+          Lascia che la nostra AI analizzi le tue spese e trovi modi per risparmiare.
         </p>
       </div>
       <Suspense fallback={<Skeleton className="h-96 w-full" />}>

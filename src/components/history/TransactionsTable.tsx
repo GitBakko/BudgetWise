@@ -94,7 +94,7 @@ export function TransactionsTable() {
       <CardContent className="p-0">
         <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
           <Input
-            placeholder="Search by description..."
+            placeholder="Cerca per descrizione..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="max-w-sm"
@@ -106,12 +106,12 @@ export function TransactionsTable() {
             }
           >
             <SelectTrigger className="w-full sm:w-[180px]">
-              <SelectValue placeholder="Filter by type" />
+              <SelectValue placeholder="Filtra per tipo" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="income">Income</SelectItem>
-              <SelectItem value="expense">Expense</SelectItem>
+              <SelectItem value="all">Tutti i Tipi</SelectItem>
+              <SelectItem value="income">Entrate</SelectItem>
+              <SelectItem value="expense">Spese</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -119,10 +119,10 @@ export function TransactionsTable() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Description</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead className="text-right">Amount</TableHead>
+              <TableHead>Descrizione</TableHead>
+              <TableHead>Categoria</TableHead>
+              <TableHead>Data</TableHead>
+              <TableHead className="text-right">Importo</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -140,7 +140,7 @@ export function TransactionsTable() {
                   <TableCell>
                     {new Date(
                       transaction.date.seconds * 1000
-                    ).toLocaleDateString()}
+                    ).toLocaleDateString("it-IT")}
                   </TableCell>
                   <TableCell
                     className={`text-right font-semibold ${
@@ -160,7 +160,7 @@ export function TransactionsTable() {
                   colSpan={4}
                   className="h-24 text-center text-muted-foreground"
                 >
-                  No transactions found.
+                  Nessuna transazione trovata.
                 </TableCell>
               </TableRow>
             )}

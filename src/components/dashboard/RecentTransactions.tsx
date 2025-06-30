@@ -105,14 +105,14 @@ export function RecentTransactions() {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle>Recent Transactions</CardTitle>
+          <CardTitle>Transazioni Recenti</CardTitle>
           <CardDescription>
-            Your latest 5 financial movements.
+            I tuoi ultimi 5 movimenti finanziari.
           </CardDescription>
         </div>
         <Button asChild variant="ghost" size="sm">
             <Link href="/dashboard/history">
-                View All
+                Mostra Tutto
                 <ArrowRight className="h-4 w-4 ml-2"/>
             </Link>
         </Button>
@@ -137,7 +137,7 @@ export function RecentTransactions() {
                         <p className="text-sm text-muted-foreground">
                           {new Date(
                             transaction.date.seconds * 1000
-                          ).toLocaleDateString()}
+                          ).toLocaleDateString("it-IT")}
                         </p>
                       </div>
                     </div>
@@ -161,7 +161,7 @@ export function RecentTransactions() {
           </Table>
         ) : (
           <p className="text-center text-muted-foreground py-8">
-            No transactions yet. Add one to get started!
+            Nessuna transazione ancora. Aggiungine una per iniziare!
           </p>
         )}
       </CardContent>

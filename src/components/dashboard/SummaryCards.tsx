@@ -78,31 +78,31 @@ export function SummaryCards() {
     <div className="grid gap-4 sm:grid-cols-3">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Income</CardTitle>
+          <CardTitle className="text-sm font-medium">Entrate Totali</CardTitle>
           <ArrowUpRight className="h-4 w-4 text-green-500" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold text-green-600 dark:text-green-400">
             +${summary.income.toFixed(2)}
           </div>
-          <p className="text-xs text-muted-foreground">This month</p>
+          <p className="text-xs text-muted-foreground">Questo mese</p>
         </CardContent>
       </Card>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
+          <CardTitle className="text-sm font-medium">Spese Totali</CardTitle>
           <ArrowDownLeft className="h-4 w-4 text-red-500" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold text-red-600 dark:text-red-400">
             -${summary.expense.toFixed(2)}
           </div>
-          <p className="text-xs text-muted-foreground">This month</p>
+          <p className="text-xs text-muted-foreground">Questo mese</p>
         </CardContent>
       </Card>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Balance</CardTitle>
+          <CardTitle className="text-sm font-medium">Saldo</CardTitle>
           <PiggyBank className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
@@ -114,7 +114,7 @@ export function SummaryCards() {
             ${summary.balance.toFixed(2)}
           </div>
           <p className="text-xs text-muted-foreground">
-            Current monthly balance
+            Saldo mensile attuale
           </p>
         </CardContent>
       </Card>

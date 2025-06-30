@@ -25,12 +25,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import DynamicIcon from "@/components/DynamicIcon";
-import { MoreHorizontal, Edit, Trash2 } from "lucide-react";
+import { MoreHorizontal, Edit, Trash2, Landmark } from "lucide-react";
 
 import { EditTransactionDialog } from "@/components/dashboard/EditTransactionDialog";
 import { DeleteTransactionDialog } from "@/components/dashboard/DeleteTransactionDialog";
 import type { Transaction } from "@/types";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export function TransactionsTable() {
   const {
@@ -129,7 +130,12 @@ export function TransactionsTable() {
                           </TableCell>
                           <TableCell>
                               <div className="flex items-center gap-2">
-                                {accountInfo?.color && <div className="h-2 w-2 rounded-full" style={{backgroundColor: accountInfo.color}} />}
+                                <Avatar className="h-6 w-6 rounded-md">
+                                  <AvatarImage src={accountInfo?.iconUrl || undefined} alt={accountInfo?.name} className="object-cover" />
+                                  <AvatarFallback className="rounded-md bg-muted text-xs">
+                                      <Landmark className="h-4 w-4 text-muted-foreground" />
+                                  </AvatarFallback>
+                                </Avatar>
                                 <span>{accountInfo?.name || "Sconosciuto"}</span>
                               </div>
                           </TableCell>

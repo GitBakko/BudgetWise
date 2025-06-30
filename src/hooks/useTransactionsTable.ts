@@ -16,6 +16,7 @@ type AccountInfo = {
     id: string;
     name: string;
     color?: string;
+    iconUrl?: string;
 }
 
 type CategoryInfo = {
@@ -79,7 +80,7 @@ export function useTransactionsTable() {
       const accs: AccountInfo[] = [];
       snapshot.forEach((doc) => {
         const account = doc.data() as Omit<Account, 'id'>;
-        accs.push({id: doc.id, name: account.name, color: account.color});
+        accs.push({id: doc.id, name: account.name, color: account.color, iconUrl: account.iconUrl });
       });
       setAccounts(accs.sort((a,b) => a.name.localeCompare(b.name)));
     }));
@@ -104,7 +105,7 @@ export function useTransactionsTable() {
 
   const accountMap = useMemo(() => {
     const map = new Map<string, Omit<AccountInfo, 'id'>>();
-    accounts.forEach(acc => map.set(acc.id, { name: acc.name, color: acc.color }));
+    accounts.forEach(acc => map.set(acc.id, { name: acc.name, color: acc.color, iconUrl: acc.iconUrl }));
     return map;
   }, [accounts]);
 

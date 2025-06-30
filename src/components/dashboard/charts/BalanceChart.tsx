@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import type { Transaction, Account, BalanceSnapshot } from "@/types";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
@@ -63,12 +63,39 @@ const getChartTimeSettings = (oldestDate: Date, newestDate: Date) => {
     }
 };
 
+const calculateAccountBalanceOnDate = (account: Account, date: Date, transactions: Transaction[], snapshots: BalanceSnapshot[]) => {
+    const accountTransactions = transactions.filter(t => t.accountId === account.id);
+    
+    const accountSnapshots = snapshots
+        .filter(s => s.accountId === account.id && !isAfter(s.date.toDate(), date))
+        .sort((a, b) => b.date.seconds - a.date.seconds);
+
+    let startingBalance = account.initialBalance;
+    let startingDate = account.createdAt.toDate();
+
+    if (accountSnapshots.length > 0) {
+        startingBalance = accountSnapshots[0].balance;
+        startingDate = accountSnapshots[0].date.toDate();
+    }
+
+    const balanceChange = accountTransactions
+        .filter(t => isAfter(t.date.toDate(), startingDate) && !isAfter(t.date.toDate(), date))
+        .reduce((acc, t) => {
+            return t.type === 'income' ? acc + t.amount : acc - t.amount;
+        }, 0);
+    
+    return startingBalance + balanceChange;
+};
+
+
 export function BalanceChart() {
   const { user } = useAuth();
-  const [chartData, setChartData] = useState<any[]>([]);
-  const [chartConfig, setChartConfig] = useState<ChartConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [hiddenSeries, setHiddenSeries] = useState<string[]>([]);
+  
+  const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
+  const [allAccounts, setAllAccounts] = useState<Account[]>([]);
+  const [allSnapshots, setAllSnapshots] = useState<BalanceSnapshot[]>([]);
 
   const handleLegendClick = (data: any) => {
     const { dataKey } = data;
@@ -89,185 +116,141 @@ export function BalanceChart() {
 
     const unsubscribers: (() => void)[] = [];
     
-    let allTransactions: Transaction[] = [];
-    let allAccounts: Account[] = [];
-    let allSnapshots: BalanceSnapshot[] = [];
-
-    let dataLoaded = { transactions: false, accounts: false, snapshots: false };
-
-    const calculateData = () => {
-      if (!user || !dataLoaded.transactions || !dataLoaded.accounts || !dataLoaded.snapshots) return;
-      
-      if (allAccounts.length === 0) {
-          setLoading(false);
-          setChartData([]);
-          setChartConfig({});
-          return;
-      }
-      
-      const calculateAccountBalanceOnDate = (account: Account, date: Date, transactions: Transaction[], snapshots: BalanceSnapshot[]) => {
-          const accountTransactions = transactions.filter(t => t.accountId === account.id);
-          
-          const accountSnapshots = snapshots
-              .filter(s => s.accountId === account.id && !isAfter(s.date.toDate(), date))
-              .sort((a, b) => b.date.seconds - a.date.seconds);
-
-          let startingBalance = account.initialBalance;
-          let startingDate = account.createdAt.toDate();
-
-          if (accountSnapshots.length > 0) {
-              startingBalance = accountSnapshots[0].balance;
-              startingDate = accountSnapshots[0].date.toDate();
-          }
-
-          const balanceChange = accountTransactions
-              .filter(t => isAfter(t.date.toDate(), startingDate) && !isAfter(t.date.toDate(), date))
-              .reduce((acc, t) => {
-                  return t.type === 'income' ? acc + t.amount : acc - t.amount;
-              }, 0);
-          
-          return startingBalance + balanceChange;
-      };
-
-      const today = startOfDay(new Date());
-
-      // Determine grouping
-      const finalBalances = new Map<string, number>();
-      allAccounts.forEach(acc => {
-          const balance = calculateAccountBalanceOnDate(acc, today, allTransactions, allSnapshots);
-          finalBalances.set(acc.id, balance);
-      });
-      const totalFinalBalance = Math.abs(Array.from(finalBalances.values()).reduce((sum, b) => sum + b, 0));
-      
-      let majorAccounts: Account[] = [...allAccounts];
-      let minorAccounts: Account[] = [];
-      let isGroupingActive = false;
-
-      if (allAccounts.length >= MIN_ACCOUNTS_FOR_GROUPING && totalFinalBalance > 0) {
-          const thresholdAmount = totalFinalBalance * GROUPING_THRESHOLD;
-          const tempMajor: Account[] = [];
-          const tempMinor: Account[] = [];
-
-          allAccounts.forEach(acc => {
-              if (Math.abs(finalBalances.get(acc.id) ?? 0) < thresholdAmount) {
-                  tempMinor.push(acc);
-              } else {
-                  tempMajor.push(acc);
-              }
-          });
-          
-          if (tempMinor.length > 0) {
-              isGroupingActive = true;
-              majorAccounts = tempMajor;
-              minorAccounts = tempMinor;
-          }
-      }
-
-      // Setup Chart Config
-      const accountColors = [
-          "hsl(var(--chart-1))",
-          "hsl(var(--chart-2))",
-          "hsl(var(--chart-3))",
-          "hsl(var(--chart-4))",
-          "hsl(var(--chart-5))",
-      ];
-      const config: ChartConfig = {
-        "Saldo Totale": {
-          label: "Saldo Totale",
-          color: "hsl(var(--primary))",
-        },
-      };
-
-      majorAccounts.forEach((account, index) => {
-        config[account.name] = {
-          label: account.name,
-          color: account.color || accountColors[index % accountColors.length],
-        };
-      });
-
-      if (isGroupingActive) {
-          config["Altri"] = {
-              label: "Altri",
-              color: "hsl(var(--muted-foreground))",
-          }
-      }
-      setChartConfig(config);
-
-
-      // Find the absolute oldest date from all data points
-      let oldestDate = new Date();
-      allAccounts.forEach(acc => {
-        if (isBefore(acc.createdAt.toDate(), oldestDate)) oldestDate = acc.createdAt.toDate();
-      });
-      allSnapshots.forEach(snap => {
-        if (isBefore(snap.date.toDate(), oldestDate)) oldestDate = snap.date.toDate();
-      });
-      
-      const settings = getChartTimeSettings(startOfDay(oldestDate), today);
-
-      const data = [];
-      let currentDate = settings.startDate;
-      
-      while (!isAfter(currentDate, today)) {
-        const dayData: { [key: string]: any } = {
-          date: typeof settings.format === 'function' ? settings.format(currentDate) : format(currentDate, settings.format, { locale: it }),
-        };
-
-        let totalDayBalance = 0;
-        
-        majorAccounts.forEach(acc => {
-            const balance = calculateAccountBalanceOnDate(acc, currentDate, allTransactions, allSnapshots);
-            dayData[acc.name] = parseFloat(balance.toFixed(2));
-            totalDayBalance += balance;
-        });
-
-        if (isGroupingActive) {
-            let othersBalance = 0;
-            minorAccounts.forEach(acc => {
-                const balance = calculateAccountBalanceOnDate(acc, currentDate, allTransactions, allSnapshots);
-                othersBalance += balance;
-            });
-            dayData["Altri"] = parseFloat(othersBalance.toFixed(2));
-            totalDayBalance += othersBalance;
-        }
-
-        dayData["Saldo Totale"] = parseFloat(totalDayBalance.toFixed(2));
-        
-        data.push(dayData);
-        currentDate = settings.increment(currentDate);
-      }
-      
-      setChartData(data);
-      setLoading(false);
-    };
+    let isInitialLoad = true;
 
     const transQuery = query(collection(db, "transactions"), where("userId", "==", user.uid));
     unsubscribers.push(onSnapshot(transQuery, (snapshot) => {
-      allTransactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Transaction));
-      dataLoaded.transactions = true;
-      calculateData();
+      setAllTransactions(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Transaction)));
     }));
     
     const accQuery = query(collection(db, "accounts"), where("userId", "==", user.uid));
     unsubscribers.push(onSnapshot(accQuery, (snapshot) => {
-      allAccounts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Account));
-      dataLoaded.accounts = true;
-      calculateData();
+      setAllAccounts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Account)));
+      if (isInitialLoad) {
+          setLoading(false);
+          isInitialLoad = false;
+      }
     }));
 
     const snapQuery = query(collection(db, "balanceSnapshots"), where("userId", "==", user.uid));
     unsubscribers.push(onSnapshot(snapQuery, (snapshot) => {
-      allSnapshots = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BalanceSnapshot));
-      dataLoaded.snapshots = true;
-      calculateData();
+      setAllSnapshots(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BalanceSnapshot)));
     }));
 
     return () => {
       unsubscribers.forEach(unsub => unsub());
     };
   }, [user]);
+  
+  const { chartData, chartConfig } = useMemo(() => {
+    if (allAccounts.length === 0) {
+        return { chartData: [], chartConfig: {} };
+    }
 
-  if (loading || !chartConfig) {
+    const today = startOfDay(new Date());
+
+    const finalBalances = new Map<string, number>();
+    allAccounts.forEach(acc => {
+        const balance = calculateAccountBalanceOnDate(acc, today, allTransactions, allSnapshots);
+        finalBalances.set(acc.id, balance);
+    });
+    const totalFinalBalance = Math.abs(Array.from(finalBalances.values()).reduce((sum, b) => sum + b, 0));
+    
+    let majorAccounts: Account[] = [...allAccounts];
+    let minorAccounts: Account[] = [];
+    let isGroupingActive = false;
+
+    if (allAccounts.length >= MIN_ACCOUNTS_FOR_GROUPING && totalFinalBalance > 0) {
+        const thresholdAmount = totalFinalBalance * GROUPING_THRESHOLD;
+        const tempMajor: Account[] = [];
+        const tempMinor: Account[] = [];
+
+        allAccounts.forEach(acc => {
+            if (Math.abs(finalBalances.get(acc.id) ?? 0) < thresholdAmount) {
+                tempMinor.push(acc);
+            } else {
+                tempMajor.push(acc);
+            }
+        });
+        
+        if (tempMinor.length > 0) {
+            isGroupingActive = true;
+            majorAccounts = tempMajor;
+            minorAccounts = tempMinor;
+        }
+    }
+
+    const accountColors = [ "hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))" ];
+    
+    const baseConfig: ChartConfig = { "Saldo Totale": { label: "Saldo Totale", color: "hsl(var(--primary))" } };
+    majorAccounts.forEach((account, index) => {
+        baseConfig[account.name] = { label: account.name, color: account.color || accountColors[index % accountColors.length] };
+    });
+    if (isGroupingActive) {
+        baseConfig["Altri"] = { label: "Altri", color: "hsl(var(--muted-foreground))" };
+    }
+
+    const visibleSeries = Object.keys(baseConfig).filter(key => !hiddenSeries.includes(key));
+    const shouldExplode = isGroupingActive && visibleSeries.length === 1 && visibleSeries[0] === 'Altri';
+    
+    let oldestDate = new Date();
+    (shouldExplode ? minorAccounts : allAccounts).forEach(acc => {
+      if (isBefore(acc.createdAt.toDate(), oldestDate)) oldestDate = acc.createdAt.toDate();
+    });
+    const relevantSnapshots = shouldExplode 
+        ? allSnapshots.filter(s => minorAccounts.some(a => a.id === s.accountId))
+        : allSnapshots;
+    relevantSnapshots.forEach(snap => {
+      if (isBefore(snap.date.toDate(), oldestDate)) oldestDate = snap.date.toDate();
+    });
+    
+    const settings = getChartTimeSettings(startOfDay(oldestDate), today);
+    const data = [];
+    let currentDate = settings.startDate;
+
+    if (shouldExplode) {
+        const explodedConfig: ChartConfig = {};
+        minorAccounts.forEach((account, index) => {
+            explodedConfig[account.name] = { label: account.name, color: account.color || accountColors[index % accountColors.length] };
+        });
+
+        while (!isAfter(currentDate, today)) {
+            const dayData: { [key: string]: any } = { date: typeof settings.format === 'function' ? settings.format(currentDate) : format(currentDate, settings.format, { locale: it }) };
+            minorAccounts.forEach(acc => {
+                const balance = calculateAccountBalanceOnDate(acc, currentDate, allTransactions, allSnapshots);
+                dayData[acc.name] = parseFloat(balance.toFixed(2));
+            });
+            data.push(dayData);
+            currentDate = settings.increment(currentDate);
+        }
+        return { chartData: data, chartConfig: explodedConfig };
+    } else {
+        while (!isAfter(currentDate, today)) {
+            const dayData: { [key: string]: any } = { date: typeof settings.format === 'function' ? settings.format(currentDate) : format(currentDate, settings.format, { locale: it }) };
+            let totalDayBalance = 0;
+            majorAccounts.forEach(acc => {
+                const balance = calculateAccountBalanceOnDate(acc, currentDate, allTransactions, allSnapshots);
+                dayData[acc.name] = parseFloat(balance.toFixed(2));
+                totalDayBalance += balance;
+            });
+            if (isGroupingActive) {
+                let othersBalance = 0;
+                minorAccounts.forEach(acc => {
+                    othersBalance += calculateAccountBalanceOnDate(acc, currentDate, allTransactions, allSnapshots);
+                });
+                dayData["Altri"] = parseFloat(othersBalance.toFixed(2));
+                totalDayBalance += othersBalance;
+            }
+            dayData["Saldo Totale"] = parseFloat(totalDayBalance.toFixed(2));
+            data.push(dayData);
+            currentDate = settings.increment(currentDate);
+        }
+        return { chartData: data, chartConfig: baseConfig };
+    }
+  }, [allAccounts, allTransactions, allSnapshots, hiddenSeries]);
+
+
+  if (loading) {
     return <Skeleton className="w-full h-80" />;
   }
 
@@ -358,3 +341,5 @@ export function BalanceChart() {
     </Card>
   );
 }
+
+    

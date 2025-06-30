@@ -43,12 +43,14 @@ export function GlobalBalanceHeader({ isChartOpen }: GlobalBalanceHeaderProps) {
             .filter(s => s.accountId === account.id)
             .sort((a, b) => b.date.seconds - a.date.seconds);
 
-        let referenceDate = account.createdAt;
+        let referenceDate = account.balanceStartDate;
         let referenceBalance = account.initialBalance;
 
-        if (accountSnapshots.length > 0) {
-            referenceDate = accountSnapshots[0].date;
-            referenceBalance = accountSnapshots[0].balance;
+        const latestApplicableSnapshot = accountSnapshots.find(s => s.date.seconds >= referenceDate.seconds);
+
+        if (latestApplicableSnapshot) {
+            referenceDate = latestApplicableSnapshot.date;
+            referenceBalance = latestApplicableSnapshot.balance;
         }
 
         const balanceChange = accountTransactions

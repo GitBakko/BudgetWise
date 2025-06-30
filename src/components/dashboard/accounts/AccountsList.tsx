@@ -180,7 +180,7 @@ export function AccountsList() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome Conto</TableHead>
-                  <TableHead>Data Creazione</TableHead>
+                  <TableHead>Data Saldo Iniziale</TableHead>
                   <TableHead className="text-right">Saldo Iniziale</TableHead>
                   <TableHead className="w-[50px] text-center"></TableHead>
                   <TableHead className="w-[50px]"></TableHead>
@@ -205,7 +205,7 @@ export function AccountsList() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {account.createdAt ? new Date(account.createdAt.seconds * 1000).toLocaleDateString("it-IT") : 'N/A'}
+                        {account.balanceStartDate ? new Date(account.balanceStartDate.seconds * 1000).toLocaleDateString("it-IT") : 'N/A'}
                       </TableCell>
                       <TableCell className="text-right font-semibold">
                         €{account.initialBalance.toFixed(2)}

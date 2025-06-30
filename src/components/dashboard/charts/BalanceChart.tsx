@@ -65,27 +65,32 @@ const getChartTimeSettings = (oldestDate: Date, newestDate: Date) => {
 };
 
 const calculateAccountBalanceOnDate = (account: Account, date: Date, transactions: Transaction[], snapshots: BalanceSnapshot[]) => {
+    if (isBefore(date, account.balanceStartDate.toDate())) {
+        return 0;
+    }
+
     const accountTransactions = transactions.filter(t => t.accountId === account.id);
-    
-    const accountSnapshots = snapshots
+    const priorSnapshots = snapshots
         .filter(s => s.accountId === account.id && !isAfter(s.date.toDate(), date))
         .sort((a, b) => b.date.seconds - a.date.seconds);
 
-    let startingBalance = account.initialBalance;
-    let startingDate = account.createdAt.toDate();
+    let referenceBalance = account.initialBalance;
+    let referenceDate = account.balanceStartDate.toDate();
 
-    if (accountSnapshots.length > 0) {
-        startingBalance = accountSnapshots[0].balance;
-        startingDate = accountSnapshots[0].date.toDate();
+    const latestApplicableSnapshot = priorSnapshots.find(s => !isBefore(s.date.toDate(), referenceDate));
+
+    if (latestApplicableSnapshot) {
+        referenceBalance = latestApplicableSnapshot.balance;
+        referenceDate = latestApplicableSnapshot.date.toDate();
     }
-
+    
     const balanceChange = accountTransactions
-        .filter(t => isAfter(t.date.toDate(), startingDate) && !isAfter(t.date.toDate(), date))
+        .filter(t => isAfter(t.date.toDate(), referenceDate) && !isAfter(t.date.toDate(), date))
         .reduce((acc, t) => {
             return t.type === 'income' ? acc + t.amount : acc - t.amount;
         }, 0);
     
-    return startingBalance + balanceChange;
+    return referenceBalance + balanceChange;
 };
 
 
@@ -212,7 +217,7 @@ export function BalanceChart() {
     
     let oldestDate = new Date();
     (shouldExplode ? minorAccounts : allAccounts).forEach(acc => {
-      if (isBefore(acc.createdAt.toDate(), oldestDate)) oldestDate = acc.createdAt.toDate();
+      if (isBefore(acc.balanceStartDate.toDate(), oldestDate)) oldestDate = acc.balanceStartDate.toDate();
     });
     const relevantSnapshots = shouldExplode 
         ? allSnapshots.filter(s => minorAccounts.some(a => a.id === s.accountId))
@@ -373,3 +378,4 @@ export function BalanceChart() {
     
 
     
+

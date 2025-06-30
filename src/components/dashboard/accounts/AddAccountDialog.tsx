@@ -11,6 +11,9 @@ import type { Account } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useDebounce } from "use-debounce";
 import { FastAverageColor } from 'fast-average-color';
+import { format } from "date-fns";
+import { it } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 import { generateAccountIcon } from "@/ai/flows/generateIconFlow";
 
@@ -26,6 +29,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -43,9 +47,11 @@ import {
 } from "@/components/ui/alert-dialog";
 
 import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Landmark, PlusCircle, Loader2, Upload, RotateCcw, RefreshCw } from "lucide-react";
+import { Landmark, PlusCircle, Loader2, Upload, RotateCcw, RefreshCw, Calendar as CalendarIcon } from "lucide-react";
 
 
 const accountSchema = z.object({
@@ -55,6 +61,7 @@ const accountSchema = z.object({
   initialBalance: z.coerce
     .number()
     .min(0, { message: "Il saldo iniziale non può essere negativo." }),
+  balanceStartDate: z.date(),
   iconUrl: z.string().optional(),
   color: z.string().optional(),
 });
@@ -174,6 +181,7 @@ export function AddAccountDialog() {
     defaultValues: {
       name: "",
       initialBalance: 0,
+      balanceStartDate: new Date(),
       iconUrl: "",
       color: "#3F51B5",
     },
@@ -274,6 +282,7 @@ export function AddAccountDialog() {
     try {
       await addDoc(collection(db, "accounts"), {
         ...values,
+        balanceStartDate: Timestamp.fromDate(values.balanceStartDate),
         userId: user.uid,
         createdAt: Timestamp.now(),
       });
@@ -344,7 +353,7 @@ export function AddAccountDialog() {
     if (loading && !isOpen) return;
     setOpen(isOpen);
     if (!isOpen) {
-      form.reset({ name: "", initialBalance: 0, iconUrl: "", color: "#3F51B5" });
+      form.reset({ name: "", initialBalance: 0, balanceStartDate: new Date(), iconUrl: "", color: "#3F51B5" });
       setIconPreview("");
       setAiIconUrl("");
       setIconLoading(false);
@@ -456,6 +465,48 @@ export function AddAccountDialog() {
             </div>
             <FormField
               control={form.control}
+              name="balanceStartDate"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Data Inizio Saldo</FormLabel>
+                   <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value ? (
+                            format(field.value, "PPP", { locale: it })
+                          ) : (
+                            <span>Scegli una data</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        disabled={(date) =>
+                          date > new Date() || date < new Date("1900-01-01")
+                        }
+                        initialFocus
+                        locale={it}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
               name="initialBalance"
               render={({ field }) => (
                 <FormItem>
@@ -463,6 +514,9 @@ export function AddAccountDialog() {
                   <FormControl>
                     <Input type="number" step="0.01" {...field} />
                   </FormControl>
+                   <FormDescription>
+                    Questo è il saldo del conto alla data di inizio specificata.
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

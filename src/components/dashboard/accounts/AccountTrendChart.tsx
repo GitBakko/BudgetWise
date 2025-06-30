@@ -48,7 +48,7 @@ const getChartTimeSettings = (oldestDate: Date, newestDate: Date) => {
         return {
             startDate: startOfQuarter(oldestDate),
             increment: (d: Date) => addQuarters(d, 1),
-            format: (d: Date) => `Q${Math.floor((d.getMonth() + 3) / 3)} ${format(d, 'yy')}`
+            format: (d: Date) => `Q${Math.floor((d.getMonth() + 3) / 3)} '${format(d, 'yy')}`
         };
     } else { // More than 3 years -> yearly
         return {
@@ -87,35 +87,42 @@ export function AccountTrendChart({ account }: AccountTrendChartProps) {
             if (!user || !dataLoaded.transactions || !dataLoaded.snapshots) return;
 
             const calculateBalanceOnDate = (date: Date) => {
+                if (isBefore(date, account.balanceStartDate.toDate())) {
+                    return 0;
+                }
+
                 const priorSnapshots = accountSnapshots
                     .filter(s => !isAfter(s.date.toDate(), date))
                     .sort((a, b) => b.date.seconds - a.date.seconds);
 
-                let startingBalance = account.initialBalance;
-                let startingDate = account.createdAt.toDate();
+                let referenceBalance = account.initialBalance;
+                let referenceDate = account.balanceStartDate.toDate();
 
-                if (priorSnapshots.length > 0) {
-                    startingBalance = priorSnapshots[0].balance;
-                    startingDate = priorSnapshots[0].date.toDate();
+                const latestApplicableSnapshot = priorSnapshots.find(s => !isBefore(s.date.toDate(), referenceDate));
+
+                if (latestApplicableSnapshot) {
+                    referenceBalance = latestApplicableSnapshot.balance;
+                    referenceDate = latestApplicableSnapshot.date.toDate();
                 }
-
+                
                 const balanceChange = accountTransactions
-                    .filter(t => isAfter(t.date.toDate(), startingDate) && !isAfter(t.date.toDate(), date))
+                    .filter(t => isAfter(t.date.toDate(), referenceDate) && !isAfter(t.date.toDate(), date))
                     .reduce((acc, t) => {
                         return t.type === 'income' ? acc + t.amount : acc - t.amount;
                     }, 0);
                 
-                return startingBalance + balanceChange;
+                return referenceBalance + balanceChange;
             };
             
             const today = startOfDay(new Date());
             
-            // Determine the oldest data point between account creation and oldest snapshot
-            let oldestDate = startOfDay(account.createdAt.toDate());
+            let oldestDate = startOfDay(account.balanceStartDate.toDate());
             if (accountSnapshots.length > 0) {
                 const oldestSnapshotDate = accountSnapshots.reduce((oldest, s) => {
-                    return isBefore(s.date.toDate(), oldest) ? s.date.toDate() : oldest;
-                }, accountSnapshots[0].date.toDate());
+                    const sDate = s.date.toDate();
+                    return isBefore(sDate, oldest) ? sDate : oldest;
+                }, new Date());
+                
                 if (isBefore(oldestSnapshotDate, oldestDate)) {
                     oldestDate = oldestSnapshotDate;
                 }

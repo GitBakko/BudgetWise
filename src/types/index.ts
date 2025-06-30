@@ -17,6 +17,7 @@ export type Account = {
   userId: string;
   name: string;
   initialBalance: number;
+  balanceStartDate: Timestamp;
   createdAt: Timestamp;
   iconUrl?: string;
   color?: string;

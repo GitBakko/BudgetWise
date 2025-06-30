@@ -60,12 +60,15 @@ export function SummaryCards() {
             .filter(s => s.accountId === account.id)
             .sort((a, b) => b.date.seconds - a.date.seconds);
 
-        let referenceDate = account.createdAt;
+        let referenceDate = account.balanceStartDate;
         let referenceBalance = account.initialBalance;
+        
+        // Find the latest snapshot that is ON or AFTER the balance start date.
+        const latestApplicableSnapshot = accountSnapshots.find(s => s.date.seconds >= referenceDate.seconds);
 
-        if (accountSnapshots.length > 0) {
-            referenceDate = accountSnapshots[0].date;
-            referenceBalance = accountSnapshots[0].balance;
+        if (latestApplicableSnapshot) {
+            referenceDate = latestApplicableSnapshot.date;
+            referenceBalance = latestApplicableSnapshot.balance;
         }
 
         const balanceChange = accountTransactions

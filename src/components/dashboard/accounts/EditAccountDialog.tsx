@@ -4,12 +4,15 @@ import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { doc, updateDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { doc, updateDoc, collection, query, where, getDocs, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";
 import type { Account } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { FastAverageColor } from 'fast-average-color';
+import { format } from "date-fns";
+import { it } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 import { generateAccountIcon } from "@/ai/flows/generateIconFlow";
 
@@ -24,6 +27,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -40,8 +44,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Landmark, Loader2, Upload, RefreshCw } from "lucide-react";
+import { Landmark, Loader2, Upload, RefreshCw, Calendar as CalendarIcon } from "lucide-react";
 
 
 const accountSchema = z.object({
@@ -51,6 +57,7 @@ const accountSchema = z.object({
   initialBalance: z.coerce
     .number()
     .min(0, { message: "Il saldo iniziale non può essere negativo." }),
+  balanceStartDate: z.date(),
   iconUrl: z.string().optional(),
   color: z.string().optional(),
 });
@@ -177,6 +184,7 @@ export function EditAccountDialog({ account, open, onOpenChange }: EditAccountDi
     defaultValues: {
       name: account.name,
       initialBalance: account.initialBalance,
+      balanceStartDate: account.balanceStartDate.toDate(),
       iconUrl: account.iconUrl || "",
       color: account.color || "#3F51B5",
     },
@@ -187,6 +195,7 @@ export function EditAccountDialog({ account, open, onOpenChange }: EditAccountDi
       form.reset({
           name: account.name,
           initialBalance: account.initialBalance,
+          balanceStartDate: account.balanceStartDate.toDate(),
           iconUrl: account.iconUrl || "",
           color: account.color || "#3F51B5",
       });
@@ -261,6 +270,7 @@ export function EditAccountDialog({ account, open, onOpenChange }: EditAccountDi
       await updateDoc(accountRef, {
         name: values.name,
         initialBalance: values.initialBalance,
+        balanceStartDate: Timestamp.fromDate(values.balanceStartDate),
         iconUrl: values.iconUrl || "",
         color: values.color || "",
       });
@@ -410,6 +420,48 @@ export function EditAccountDialog({ account, open, onOpenChange }: EditAccountDi
             </div>
             <FormField
               control={form.control}
+              name="balanceStartDate"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Data Inizio Saldo</FormLabel>
+                   <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value ? (
+                            format(field.value, "PPP", { locale: it })
+                          ) : (
+                            <span>Scegli una data</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        disabled={(date) =>
+                          date > new Date() || date < new Date("1900-01-01")
+                        }
+                        initialFocus
+                        locale={it}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
               name="initialBalance"
               render={({ field }) => (
                 <FormItem>
@@ -417,7 +469,9 @@ export function EditAccountDialog({ account, open, onOpenChange }: EditAccountDi
                   <FormControl>
                     <Input type="number" step="0.01" {...field} />
                   </FormControl>
-                   <p className="text-xs text-muted-foreground pt-1">Questo valore è usato solo se non ci sono saldi a data impostati.</p>
+                   <FormDescription>
+                     Questo è il saldo del conto alla data di inizio specificata.
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

@@ -7,14 +7,13 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader2, Camera, Upload, AlertTriangle } from "lucide-react";
-import { uploadFile } from "@/services/storage";
 import { ocrReceipt, type OcrReceiptOutput } from "@/ai/flows/receiptOcrFlow";
 import Image from "next/image";
 
 interface ScanReceiptDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onScanComplete: (data: OcrReceiptOutput, imageUrl: string) => void;
+  onScanComplete: (data: OcrReceiptOutput) => void;
 }
 
 type ScanState = "idle" | "requesting_permission" | "camera_active" | "processing" | "permission_denied";
@@ -80,13 +79,10 @@ export function ScanReceiptDialog({ open, onOpenChange, onScanComplete }: ScanRe
     reader.onload = async (e) => {
         const dataUri = e.target?.result as string;
         try {
-            setProcessingMessage("Caricamento immagine...");
-            const receiptUrl = await uploadFile(file, `receipts/${user.uid}/${file.name}`);
-            
             setProcessingMessage("Analisi AI in corso...");
             const ocrResult = await ocrReceipt({ receiptDataUri: dataUri });
             
-            onScanComplete(ocrResult, receiptUrl);
+            onScanComplete(ocrResult);
         } catch (error) {
             console.error(error);
             toast({ variant: "destructive", title: "Errore", description: "Impossibile processare lo scontrino." });

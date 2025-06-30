@@ -2,7 +2,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from 'next/link';
 import { useTransactionsTable } from "@/hooks/useTransactionsTable";
 import {
   Table,
@@ -26,7 +25,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import DynamicIcon from "@/components/DynamicIcon";
-import { MoreHorizontal, Edit, Trash2, Camera } from "lucide-react";
+import { MoreHorizontal, Edit, Trash2 } from "lucide-react";
 
 import { EditTransactionDialog } from "@/components/dashboard/EditTransactionDialog";
 import { DeleteTransactionDialog } from "@/components/dashboard/DeleteTransactionDialog";
@@ -113,16 +112,7 @@ export function TransactionsTable() {
                     return (
                         <TableRow key={transaction.id}>
                           <TableCell className="font-medium">
-                            <div className="flex items-center gap-2">
-                                {transaction.receiptUrl && (
-                                    <Button variant="ghost" size="icon" className="h-6 w-6" asChild>
-                                        <Link href={transaction.receiptUrl} target="_blank" rel="noopener noreferrer">
-                                            <Camera className="h-4 w-4 text-muted-foreground" />
-                                        </Link>
-                                    </Button>
-                                )}
-                                <span>{transaction.description}</span>
-                            </div>
+                            {transaction.description}
                           </TableCell>
                           <TableCell>
                               <div className="flex items-center gap-2">

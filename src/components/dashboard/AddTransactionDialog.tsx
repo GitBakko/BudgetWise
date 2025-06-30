@@ -12,7 +12,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { useUserAccounts } from "@/hooks/useUserAccounts";
 import { useUserCategories } from "@/hooks/useUserCategories";
 import type { Category } from "@/types";
-import Image from "next/image";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -22,7 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar as CalendarIcon, PlusCircle, ArrowDownCircle, ArrowUpCircle, Landmark, Globe, ScanLine, X } from "lucide-react";
+import { Calendar as CalendarIcon, PlusCircle, ArrowDownCircle, ArrowUpCircle, Landmark, Globe, ScanLine } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -54,7 +53,6 @@ export function AddTransactionDialog() {
   const { categories, loading: categoriesLoading } = useUserCategories();
   
   const [isScanOpen, setScanOpen] = useState(false);
-  const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
 
   const defaultGeneralCategory: Category = {
     id: 'default-general-category', name: 'generale', type: 'general',
@@ -74,7 +72,6 @@ export function AddTransactionDialog() {
       type: "expense", amount: 0, description: "", accountId: "",
       category: "", date: new Date(), notes: "",
     });
-    setReceiptUrl(null);
     setActiveTab("expense");
   };
 
@@ -97,7 +94,6 @@ export function AddTransactionDialog() {
         date: Timestamp.fromDate(values.date),
         userId: user.uid,
         createdAt: Timestamp.now(),
-        receiptUrl: receiptUrl || null,
       });
       toast({ title: "Successo!", description: "Transazione aggiunta." });
       resetForm();
@@ -109,7 +105,7 @@ export function AddTransactionDialog() {
     }
   };
 
-  const handleScanComplete = (data: OcrReceiptOutput, imageUrl: string) => {
+  const handleScanComplete = (data: OcrReceiptOutput) => {
     if (data.merchantName) form.setValue('description', data.merchantName, { shouldValidate: true });
     if (data.totalAmount) form.setValue('amount', data.totalAmount, { shouldValidate: true });
     if (data.transactionDate) {
@@ -118,7 +114,6 @@ export function AddTransactionDialog() {
             form.setValue('date', parsedDate, { shouldValidate: true });
         }
     }
-    setReceiptUrl(imageUrl);
     setScanOpen(false);
   };
 
@@ -147,24 +142,21 @@ export function AddTransactionDialog() {
           </Tabs>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <div className="flex items-start gap-2">
-                <div className="flex-1 space-y-4">
-                  <FormField control={form.control} name="amount" render={({ field }) => (
-                    <FormItem><FormLabel>Importo</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
-                  )} />
-                  <FormField control={form.control} name="description" render={({ field }) => (
-                    <FormItem><FormLabel>Descrizione</FormLabel><FormControl><Input placeholder="es. Caffè" {...field} /></FormControl><FormMessage /></FormItem>
-                  )} />
-                </div>
-                <div className="flex flex-col gap-2 items-center pt-2">
-                   <Button type="button" variant="outline" size="icon" onClick={() => setScanOpen(true)}><ScanLine className="h-5 w-5" /><span className="sr-only">Scan Receipt</span></Button>
-                   {receiptUrl && (
-                        <div className="relative">
-                            <Image src={receiptUrl} alt="Anteprima scontrino" width={40} height={40} className="rounded-md object-cover h-10 w-10 border" />
-                            <Button type="button" variant="destructive" size="icon" className="absolute -top-2 -right-2 h-5 w-5 rounded-full" onClick={() => setReceiptUrl(null)}><X className="h-3 w-3" /></Button>
-                        </div>
-                   )}
-                </div>
+              <div className="space-y-4">
+                 <div className="flex items-end gap-2">
+                    <div className="flex-1">
+                      <FormField control={form.control} name="amount" render={({ field }) => (
+                        <FormItem><FormLabel>Importo</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
+                      )} />
+                    </div>
+                    <Button type="button" variant="outline" size="icon" onClick={() => setScanOpen(true)}>
+                        <ScanLine className="h-5 w-5" />
+                        <span className="sr-only">Scansiona Scontrino</span>
+                    </Button>
+                 </div>
+                <FormField control={form.control} name="description" render={({ field }) => (
+                  <FormItem><FormLabel>Descrizione</FormLabel><FormControl><Input placeholder="es. Caffè" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
               </div>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <FormField control={form.control} name="accountId" render={({ field }) => (

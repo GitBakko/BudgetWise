@@ -12,7 +12,6 @@ export type Transaction = {
   category: string;
   createdAt: Timestamp;
   notes?: string;
-  receiptUrl?: string;
 };
 
 export type Account = {

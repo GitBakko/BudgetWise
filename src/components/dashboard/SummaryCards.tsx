@@ -60,7 +60,7 @@ export function SummaryCards() {
             .filter(s => s.accountId === account.id)
             .sort((a, b) => b.date.seconds - a.date.seconds);
 
-        let referenceDate = account.balanceStartDate;
+        let referenceDate = account.balanceStartDate || account.createdAt;
         let referenceBalance = account.initialBalance;
         
         // Find the latest snapshot that is ON or AFTER the balance start date.

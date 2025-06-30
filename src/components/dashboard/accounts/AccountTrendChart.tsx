@@ -86,8 +86,10 @@ export function AccountTrendChart({ account }: AccountTrendChartProps) {
         const calculateData = () => {
             if (!user || !dataLoaded.transactions || !dataLoaded.snapshots) return;
 
+            const accountStartDate = (account.balanceStartDate || account.createdAt).toDate();
+
             const calculateBalanceOnDate = (date: Date) => {
-                if (isBefore(date, account.balanceStartDate.toDate())) {
+                if (isBefore(date, accountStartDate)) {
                     return 0;
                 }
 
@@ -96,7 +98,7 @@ export function AccountTrendChart({ account }: AccountTrendChartProps) {
                     .sort((a, b) => b.date.seconds - a.date.seconds);
 
                 let referenceBalance = account.initialBalance;
-                let referenceDate = account.balanceStartDate.toDate();
+                let referenceDate = accountStartDate;
 
                 const latestApplicableSnapshot = priorSnapshots.find(s => !isBefore(s.date.toDate(), referenceDate));
 
@@ -116,7 +118,7 @@ export function AccountTrendChart({ account }: AccountTrendChartProps) {
             
             const today = startOfDay(new Date());
             
-            let oldestDate = startOfDay(account.balanceStartDate.toDate());
+            let oldestDate = startOfDay(accountStartDate);
             if (accountSnapshots.length > 0) {
                 const oldestSnapshotDate = accountSnapshots.reduce((oldest, s) => {
                     const sDate = s.date.toDate();

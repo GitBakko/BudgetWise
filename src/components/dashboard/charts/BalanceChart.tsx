@@ -65,7 +65,8 @@ const getChartTimeSettings = (oldestDate: Date, newestDate: Date) => {
 };
 
 const calculateAccountBalanceOnDate = (account: Account, date: Date, transactions: Transaction[], snapshots: BalanceSnapshot[]) => {
-    if (isBefore(date, account.balanceStartDate.toDate())) {
+    const accountStartDate = (account.balanceStartDate || account.createdAt).toDate();
+    if (isBefore(date, accountStartDate)) {
         return 0;
     }
 
@@ -75,7 +76,7 @@ const calculateAccountBalanceOnDate = (account: Account, date: Date, transaction
         .sort((a, b) => b.date.seconds - a.date.seconds);
 
     let referenceBalance = account.initialBalance;
-    let referenceDate = account.balanceStartDate.toDate();
+    let referenceDate = accountStartDate;
 
     const latestApplicableSnapshot = priorSnapshots.find(s => !isBefore(s.date.toDate(), referenceDate));
 
@@ -217,7 +218,8 @@ export function BalanceChart() {
     
     let oldestDate = new Date();
     (shouldExplode ? minorAccounts : allAccounts).forEach(acc => {
-      if (isBefore(acc.balanceStartDate.toDate(), oldestDate)) oldestDate = acc.balanceStartDate.toDate();
+      const accountStartDate = (acc.balanceStartDate || acc.createdAt).toDate();
+      if (isBefore(accountStartDate, oldestDate)) oldestDate = accountStartDate;
     });
     const relevantSnapshots = shouldExplode 
         ? allSnapshots.filter(s => minorAccounts.some(a => a.id === s.accountId))
@@ -378,4 +380,5 @@ export function BalanceChart() {
     
 
     
+
 

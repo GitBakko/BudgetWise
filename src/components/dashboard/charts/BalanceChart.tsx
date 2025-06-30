@@ -52,7 +52,7 @@ const getChartTimeSettings = (oldestDate: Date, newestDate: Date) => {
         return {
             startDate: startOfQuarter(oldestDate),
             increment: (d: Date) => addQuarters(d, 1),
-            format: (d: Date) => `Q${Math.floor((d.getMonth() + 3) / 3)} ${format(d, 'yy')}`
+            format: (d: Date) => `Q${Math.floor((d.getMonth() + 3) / 3)} '${format(d, 'yy')}`
         };
     } else { // More than 3 years -> yearly
         return {
@@ -68,6 +68,18 @@ export function BalanceChart() {
   const [chartData, setChartData] = useState<any[]>([]);
   const [chartConfig, setChartConfig] = useState<ChartConfig | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hiddenSeries, setHiddenSeries] = useState<string[]>([]);
+
+  const handleLegendClick = (data: any) => {
+    const { dataKey } = data;
+    if (dataKey) {
+        setHiddenSeries(prev => 
+            prev.includes(dataKey) 
+                ? prev.filter(key => key !== dataKey) 
+                : [...prev, dataKey]
+        );
+    }
+  };
 
   useEffect(() => {
     if (!user) {
@@ -317,7 +329,11 @@ export function BalanceChart() {
                       )}
                     />}
                 />
-                <Legend verticalAlign="top" wrapperStyle={{paddingBottom: '20px'}} />
+                <Legend 
+                    verticalAlign="top" 
+                    wrapperStyle={{paddingBottom: '20px', cursor: 'pointer'}}
+                    onClick={handleLegendClick}
+                />
                 {Object.keys(chartConfig).map((key) => {
                     const isTotal = key === "Saldo Totale";
                     const isOthers = key === "Altri";
@@ -332,6 +348,7 @@ export function BalanceChart() {
                             strokeDasharray={isOthers ? "3 3" : (isTotal ? "0" : "5 5")}
                             dot={false}
                             activeDot={{ r: 4, strokeWidth: 1, fill: "hsl(var(--background))" }}
+                            hide={hiddenSeries.includes(key)}
                         />
                     )
                 })}

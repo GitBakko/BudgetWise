@@ -29,7 +29,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
-import { Button } from "../ui/button";
+import { Button } from "@/components/ui/button";
 import { ArrowUpRight, ArrowDownLeft, ArrowRight, Landmark } from "lucide-react";
 
 type AccountInfo = {

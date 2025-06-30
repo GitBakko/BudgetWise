@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -105,7 +106,7 @@ export function RecentTransactions() {
                         }`}
                         >
                         {transaction.type === "income" ? "+" : "-"}
-                        €{transaction.amount.toFixed(2)}
+                        €{transaction.amount.toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                         </div>
                         <Badge variant="outline" className="mt-1 capitalize">{transaction.category}</Badge>
                     </TableCell>

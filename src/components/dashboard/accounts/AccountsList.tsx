@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { Fragment } from "react";
@@ -112,7 +113,7 @@ export function AccountsList({ onImportClick }: AccountsListProps) {
                         {account.snapshotCount}
                       </TableCell>
                       <TableCell className="font-semibold">
-                        {typeof account.lastBalance === 'number' ? `€${account.lastBalance.toFixed(2)}` : 'N/D'}
+                        {typeof account.lastBalance === 'number' ? `€${account.lastBalance.toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : 'N/D'}
                       </TableCell>
                       <TableCell className="text-right">
                         {account.lastBalanceDate ? new Date(account.lastBalanceDate.seconds * 1000).toLocaleDateString("it-IT") : 'N/D'}

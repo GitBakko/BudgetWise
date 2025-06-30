@@ -130,6 +130,18 @@ export function EditTransactionDialog({ transaction, open, onOpenChange }: EditT
             form.setValue('date', parsedDate, { shouldValidate: true });
         }
     }
+
+    const notesContent = [
+      `--- Dati Scontrino ---`,
+      `Negozio: ${data.merchantName || 'N/D'}`,
+      `Importo: €${data.totalAmount?.toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2}) || 'N/D'}`,
+      `Data: ${data.transactionDate || 'N/D'}`,
+      `--------------------`,
+    ].join('\n');
+
+    const existingNotes = form.getValues('notes');
+    form.setValue('notes', existingNotes ? `${existingNotes}\n\n${notesContent}` : notesContent, { shouldValidate: true });
+    
     setScanOpen(false);
   };
 
@@ -197,7 +209,7 @@ export function EditTransactionDialog({ transaction, open, onOpenChange }: EditT
                 </Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus locale={it} /></PopoverContent></Popover><FormMessage /></FormItem>
               )} />
                <FormField control={form.control} name="notes" render={({ field }) => (
-                    <FormItem><FormLabel>Note (opzionale)</FormLabel><FormControl><Textarea placeholder="Aggiungi dettagli extra qui..." {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Note (opzionale)</FormLabel><FormControl><Textarea placeholder="Aggiungi dettagli extra qui..." {...field} className="font-mono" /></FormControl><FormMessage /></FormItem>
                 )} />
               <Button type="submit" disabled={loading} className="w-full">
                 {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Salva Modifiche"}

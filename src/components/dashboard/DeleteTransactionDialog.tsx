@@ -55,7 +55,7 @@ export function DeleteTransactionDialog({
             Questa azione non può essere annullata. Questo eliminerà
             permanentemente la transazione:{" "}
             <span className="font-semibold text-foreground">{transaction.description}</span>{" "}
-            di importo €{transaction.amount.toFixed(2)}.
+            di importo €{transaction.amount.toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

@@ -30,6 +30,7 @@ import { MoreHorizontal, Edit, Trash2 } from "lucide-react";
 import { EditTransactionDialog } from "@/components/dashboard/EditTransactionDialog";
 import { DeleteTransactionDialog } from "@/components/dashboard/DeleteTransactionDialog";
 import type { Transaction } from "@/types";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 export function TransactionsTable() {
   const {
@@ -111,8 +112,20 @@ export function TransactionsTable() {
                     const categoryInfo = categoryMap.get(transaction.category);
                     return (
                         <TableRow key={transaction.id}>
-                          <TableCell className="font-medium">
-                            {transaction.description}
+                          <TableCell className="font-medium max-w-xs truncate">
+                            {transaction.notes ? (
+                                <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <span className="underline decoration-dashed cursor-help">{transaction.description}</span>
+                                </TooltipTrigger>
+                                <TooltipContent className="max-w-sm">
+                                    <p className="font-bold mb-2">Note:</p>
+                                    <pre className="text-xs font-mono whitespace-pre-wrap">{transaction.notes}</pre>
+                                </TooltipContent>
+                                </Tooltip>
+                            ) : (
+                                transaction.description
+                            )}
                           </TableCell>
                           <TableCell>
                               <div className="flex items-center gap-2">
@@ -131,7 +144,7 @@ export function TransactionsTable() {
                           <TableCell>{new Date(transaction.date.seconds * 1000).toLocaleDateString("it-IT")}</TableCell>
                           <TableCell className={`text-right font-semibold ${transaction.type === "income" ? "text-success" : "text-destructive"}`}>
                             {transaction.type === "income" ? "+" : "-"}
-                            €{transaction.amount.toFixed(2)}
+                            €{transaction.amount.toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                           </TableCell>
                           <TableCell>
                               <DropdownMenu>

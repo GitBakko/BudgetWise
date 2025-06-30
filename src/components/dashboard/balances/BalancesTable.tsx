@@ -1,3 +1,4 @@
+
 "use client";
 
 import { format } from "date-fns";
@@ -62,7 +63,7 @@ export function BalancesTable({ accountId }: BalancesTableProps) {
                         {format(snapshot.date.toDate(), "PPP", { locale: it })}
                       </TableCell>
                       <TableCell className="text-right font-semibold">
-                        €{snapshot.balance.toFixed(2)}
+                        €{snapshot.balance.toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                       </TableCell>
                       <TableCell>
                         <DropdownMenu>

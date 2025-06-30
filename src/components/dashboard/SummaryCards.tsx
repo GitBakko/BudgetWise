@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useSummary } from "@/hooks/useSummary";
@@ -27,7 +28,7 @@ export function SummaryCards() {
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold text-success">
-            +€{summary.monthlyIncome.toFixed(2)}
+            +€{summary.monthlyIncome.toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
           </div>
           <p className="text-xs text-muted-foreground">Questo mese</p>
         </CardContent>
@@ -39,7 +40,7 @@ export function SummaryCards() {
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold text-destructive">
-            -€{summary.monthlyExpense.toFixed(2)}
+            -€{summary.monthlyExpense.toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
           </div>
           <p className="text-xs text-muted-foreground">Questo mese</p>
         </CardContent>
@@ -55,7 +56,7 @@ export function SummaryCards() {
               summary.totalBalance >= 0 ? "text-primary" : "text-destructive"
             }`}
           >
-            €{summary.totalBalance.toFixed(2)}
+            €{summary.totalBalance.toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
           </div>
           <p className="text-xs text-muted-foreground">
             Saldo complessivo di tutti i conti

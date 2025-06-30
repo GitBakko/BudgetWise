@@ -114,6 +114,18 @@ export function AddTransactionDialog() {
             form.setValue('date', parsedDate, { shouldValidate: true });
         }
     }
+    
+    const notesContent = [
+      `--- Dati Scontrino ---`,
+      `Negozio: ${data.merchantName || 'N/D'}`,
+      `Importo: €${data.totalAmount?.toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2}) || 'N/D'}`,
+      `Data: ${data.transactionDate || 'N/D'}`,
+      `--------------------`,
+    ].join('\n');
+
+    const existingNotes = form.getValues('notes');
+    form.setValue('notes', existingNotes ? `${existingNotes}\n\n${notesContent}` : notesContent, { shouldValidate: true });
+
     setScanOpen(false);
   };
 
@@ -182,7 +194,7 @@ export function AddTransactionDialog() {
                 </Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus locale={it} /></PopoverContent></Popover><FormMessage /></FormItem>
               )} />
                <FormField control={form.control} name="notes" render={({ field }) => (
-                    <FormItem><FormLabel>Note (opzionale)</FormLabel><FormControl><Textarea placeholder="Aggiungi dettagli extra qui..." {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Note (opzionale)</FormLabel><FormControl><Textarea placeholder="Aggiungi dettagli extra qui..." {...field} className="font-mono" /></FormControl><FormMessage /></FormItem>
                 )} />
               <Button type="submit" disabled={loading || accounts.length === 0} className={cn("w-full", activeTab === 'income' && "bg-success hover:bg-success/90 text-success-foreground", activeTab === 'expense' && "bg-destructive hover:bg-destructive/90 text-destructive-foreground")}>
                 {loading ? "Aggiunta..." : (activeTab === 'expense' ? "Aggiungi Spesa" : "Aggiungi Entrata")}

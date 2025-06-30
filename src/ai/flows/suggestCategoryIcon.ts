@@ -25,7 +25,7 @@ export async function suggestCategoryIcon(categoryName: SuggestCategoryIconInput
 const prompt = ai.definePrompt({
   name: 'suggestCategoryIconPrompt',
   input: {schema: SuggestCategoryIconInputSchema},
-  output: {schema: SuggestCategoryIconOutputSchema},
+  output: {schema: SuggestCategoryIconOutputSchema.nullable()},
   prompt: `You are an expert UI designer specializing in iconography for financial apps.
 Your task is to suggest the most appropriate icon for a given category name.
 You must choose one icon from the provided list.

@@ -1,75 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useAuth } from "@/hooks/useAuth";
-import type { Transaction, Account, BalanceSnapshot } from "@/types";
-import { collection, query, where, onSnapshot } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { useSummary } from "@/hooks/useSummary";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PiggyBank, ChevronDown } from "lucide-react";
 import { CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { calculateAllAccountsCurrentBalance } from "@/lib/balanceCalculations";
 
 interface GlobalBalanceHeaderProps {
   isChartOpen: boolean;
 }
 
 export function GlobalBalanceHeader({ isChartOpen }: GlobalBalanceHeaderProps) {
-  const { user } = useAuth();
-  const [totalBalance, setTotalBalance] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const { summary, loading } = useSummary();
 
-  useEffect(() => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
-
-    const unsubscribers: (() => void)[] = [];
-    
-    let allTransactions: Transaction[] = [];
-    let allAccounts: Account[] = [];
-    let allSnapshots: BalanceSnapshot[] = [];
-
-    const dataLoaded = { transactions: false, accounts: false, snapshots: false };
-
-    const calculateSummary = () => {
-      if (!user || !dataLoaded.transactions || !dataLoaded.accounts || !dataLoaded.snapshots) return;
-      
-      const total = calculateAllAccountsCurrentBalance(allAccounts, allTransactions, allSnapshots);
-
-      setTotalBalance(total);
-      setLoading(false);
-    };
-
-    const transQuery = query(collection(db, "transactions"), where("userId", "==", user.uid));
-    unsubscribers.push(onSnapshot(transQuery, (snapshot) => {
-      allTransactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Transaction));
-      dataLoaded.transactions = true;
-      calculateSummary();
-    }));
-    
-    const accQuery = query(collection(db, "accounts"), where("userId", "==", user.uid));
-    unsubscribers.push(onSnapshot(accQuery, (snapshot) => {
-      allAccounts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Account));
-      dataLoaded.accounts = true;
-      calculateSummary();
-    }));
-
-    const snapQuery = query(collection(db, "balanceSnapshots"), where("userId", "==", user.uid));
-    unsubscribers.push(onSnapshot(snapQuery, (snapshot) => {
-      allSnapshots = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BalanceSnapshot));
-      dataLoaded.snapshots = true;
-      calculateSummary();
-    }));
-
-    return () => {
-      unsubscribers.forEach(unsub => unsub());
-    };
-  }, [user]);
-  
   if (loading) {
     return <Skeleton className="h-24 w-full rounded-lg" />;
   }
@@ -81,7 +25,7 @@ export function GlobalBalanceHeader({ isChartOpen }: GlobalBalanceHeaderProps) {
         <div>
             <h2 className="text-sm font-medium text-primary-foreground/80">Saldo Totale Complessivo</h2>
             <p className="text-3xl font-bold">
-              €{totalBalance.toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+              €{summary.totalBalance.toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
             </p>
         </div>
       </div>

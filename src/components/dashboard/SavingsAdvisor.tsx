@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { savingsAdvisor } from "@/ai/flows/savingsAdvisor";
+import { useMemo } from "react";
 import {
   Card,
   CardContent,
@@ -11,66 +10,17 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAuth } from "@/hooks/useAuth";
-import type { Transaction } from "@/types";
-import {
-  collection,
-  query,
-  where,
-  onSnapshot,
-} from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import { BrainCircuit } from "lucide-react";
+import { useSavingsAdvisor } from "@/hooks/useSavingsAdvisor";
 
 export function SavingsAdvisor() {
-  const { user } = useAuth();
-  const [suggestion, setSuggestion] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-
-  useEffect(() => {
-    if (!user) return;
-
-    // This query fetches all transactions for the user.
-    // Sorting and filtering are done on the client-side to avoid needing a composite index in Firestore.
-    const q = query(
-      collection(db, "transactions"),
-      where("userId", "==", user.uid)
-    );
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const allTransactions: Transaction[] = [];
-      snapshot.forEach((doc) =>
-        allTransactions.push({ id: doc.id, ...doc.data() } as Transaction)
-      );
-
-      // Sort by date descending, then filter for expenses and take the most recent ones.
-      allTransactions.sort((a, b) => b.date.seconds - a.date.seconds);
-      const expenseTransactions = allTransactions
-        .filter((t) => t.type === "expense")
-        .slice(0, 50);
-
-      setTransactions(expenseTransactions);
-    });
-
-    return () => unsubscribe();
-  }, [user]);
-
-  const handleGetSuggestion = async () => {
-    setLoading(true);
-    setError("");
-    setSuggestion("");
-    try {
-      const result = await savingsAdvisor(transactions);
-      setSuggestion(result);
-    } catch (err) {
-      setError("Spiacente, non sono riuscito a generare un suggerimento in questo momento.");
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    suggestion,
+    loading,
+    error,
+    transactions,
+    handleGetSuggestion
+  } = useSavingsAdvisor();
   
   const formattedSuggestion = useMemo(() => {
     if (!suggestion) return null;

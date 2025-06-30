@@ -8,13 +8,10 @@ import {
   addDoc,
   collection,
   Timestamp,
-  query,
-  where,
-  onSnapshot,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";
-import type { Account } from "@/types";
+import { useUserAccounts } from "@/hooks/useUserAccounts";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -83,7 +80,7 @@ export function AddTransactionDialog() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<"income" | "expense">("expense");
-  const [accounts, setAccounts] = useState<Account[]>([]);
+  const accounts = useUserAccounts();
 
   const form = useForm<z.infer<typeof transactionSchema>>({
     resolver: zodResolver(transactionSchema),
@@ -96,18 +93,6 @@ export function AddTransactionDialog() {
       date: new Date(),
     },
   });
-
-  useEffect(() => {
-    if (!user) return;
-    const q = query(collection(db, "accounts"), where("userId", "==", user.uid));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const accs: Account[] = [];
-      snapshot.forEach((doc) => accs.push({ id: doc.id, ...doc.data() } as Account));
-      accs.sort((a, b) => a.name.localeCompare(b.name));
-      setAccounts(accs);
-    });
-    return () => unsubscribe();
-  }, [user]);
 
   const onTabChange = (value: string) => {
     const type = value as "income" | "expense";

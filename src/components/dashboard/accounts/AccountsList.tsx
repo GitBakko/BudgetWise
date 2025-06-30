@@ -69,7 +69,7 @@ export function AccountsList() {
         querySnapshot.forEach((doc) => {
           accountsData.push({ id: doc.id, ...doc.data() } as Account);
         });
-        accountsData.sort((a, b) => (b.createdAt.seconds) - (a.createdAt.seconds));
+        accountsData.sort((a, b) => a.name.localeCompare(b.name));
         setAccounts(accountsData);
         setLoading(false);
       },

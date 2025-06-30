@@ -103,6 +103,7 @@ export function AddTransactionDialog() {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const accs: Account[] = [];
       snapshot.forEach((doc) => accs.push({ id: doc.id, ...doc.data() } as Account));
+      accs.sort((a, b) => a.name.localeCompare(b.name));
       setAccounts(accs);
     });
     return () => unsubscribe();

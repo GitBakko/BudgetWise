@@ -18,7 +18,7 @@ import { db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";
 import type { Account } from "@/types";
 import Papa from "papaparse";
-import { startOfDay, format } from "date-fns";
+import { startOfDay, format, startOfMonth } from "date-fns";
 import { it } from "date-fns/locale";
 
 import { Button } from "@/components/ui/button";
@@ -107,6 +107,7 @@ export function ImportBalancesDialog() {
       snapshot.forEach((doc) =>
         accs.push({ id: doc.id, ...doc.data() } as Account)
       );
+      accs.sort((a, b) => a.name.localeCompare(b.name));
       setAccounts(accs);
     });
     return () => unsubscribe();
@@ -173,22 +174,29 @@ export function ImportBalancesDialog() {
           });
 
           // Process CSV data to build preview
+          const rawData = data as { date: string, balance: string }[];
+          let invalidCount = 0;
+
+          const processedRows = rawData.map(row => {
+              const date = new Date(row.date);
+              const balance = parseFloat(row.balance);
+
+              if (isNaN(date.getTime()) || isNaN(balance)) {
+                  invalidCount++;
+                  return null;
+              }
+              return { date, balance };
+          }).filter(Boolean) as { date: Date; balance: number }[];
+
+          processedRows.sort((a, b) => a.date.getTime() - b.date.getTime());
+
           let newCount = 0;
           let overwrittenCount = 0;
-          let invalidCount = 0;
           const months = new Set<string>();
           const rowsToImport: PreviewData["rowsToImport"] = [];
 
-          for (const row of data as { date: string; balance: string }[]) {
-            const date = new Date(row.date);
-            const balance = parseFloat(row.balance);
-
-            if (isNaN(date.getTime()) || isNaN(balance)) {
-              invalidCount++;
-              continue;
-            }
-
-            const normalizedDate = startOfDay(date);
+          for (const row of processedRows) {
+            const normalizedDate = startOfDay(row.date);
             const existingDocId = existingSnapshots.get(
               normalizedDate.getTime()
             );
@@ -199,7 +207,7 @@ export function ImportBalancesDialog() {
               newCount++;
             }
 
-            rowsToImport.push({ date: normalizedDate, balance, existingDocId });
+            rowsToImport.push({ date: normalizedDate, balance: row.balance, existingDocId });
             months.add(format(normalizedDate, "MMMM yyyy", { locale: it }));
           }
 

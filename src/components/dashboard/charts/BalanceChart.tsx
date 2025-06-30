@@ -126,7 +126,9 @@ export function BalanceChart() {
     
     const accQuery = query(collection(db, "accounts"), where("userId", "==", user.uid));
     unsubscribers.push(onSnapshot(accQuery, (snapshot) => {
-      setAllAccounts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Account)));
+      const accountsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Account));
+      accountsData.sort((a, b) => a.name.localeCompare(b.name));
+      setAllAccounts(accountsData);
       if (isInitialLoad) {
           setLoading(false);
           isInitialLoad = false;

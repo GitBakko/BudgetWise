@@ -26,8 +26,9 @@ import { it } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
-import { TrendingUp } from "lucide-react";
+import { TrendingUp, Layers } from "lucide-react";
 import { ChartContainer, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
+import { Button } from "@/components/ui/button";
 
 const GROUPING_THRESHOLD = 0.02; // 2%
 const MIN_ACCOUNTS_FOR_GROUPING = 3; // Apply grouping only if there are 3 or more accounts
@@ -141,10 +142,10 @@ export function BalanceChart() {
       unsubscribers.forEach(unsub => unsub());
     };
   }, [user]);
-  
-  const { chartData, chartConfig } = useMemo(() => {
+
+  const { majorAccounts, minorAccounts, isGroupingActive, baseConfig } = useMemo(() => {
     if (allAccounts.length === 0) {
-        return { chartData: [], chartConfig: {} };
+        return { majorAccounts: [], minorAccounts: [], isGroupingActive: false, baseConfig: {} };
     }
 
     const today = startOfDay(new Date());
@@ -189,9 +190,23 @@ export function BalanceChart() {
     if (isGroupingActive) {
         baseConfig["Altri"] = { label: "Altri", color: "hsl(var(--muted-foreground))" };
     }
+    return { majorAccounts, minorAccounts, isGroupingActive, baseConfig };
+  }, [allAccounts, allTransactions, allSnapshots]);
 
-    const visibleSeries = Object.keys(baseConfig).filter(key => !hiddenSeries.includes(key));
-    const shouldExplode = isGroupingActive && visibleSeries.length === 1 && visibleSeries[0] === 'Altri';
+  const visibleSeries = Object.keys(baseConfig).filter(key => !hiddenSeries.includes(key));
+  const shouldExplode = isGroupingActive && visibleSeries.length === 1 && visibleSeries[0] === 'Altri';
+
+  const handleResetView = () => {
+    setHiddenSeries([]);
+  };
+  
+  const { chartData, chartConfig } = useMemo(() => {
+    if (allAccounts.length === 0) {
+        return { chartData: [], chartConfig: {} };
+    }
+
+    const today = startOfDay(new Date());
+    const accountColors = [ "hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))" ];
     
     let oldestDate = new Date();
     (shouldExplode ? minorAccounts : allAccounts).forEach(acc => {
@@ -247,7 +262,7 @@ export function BalanceChart() {
         }
         return { chartData: data, chartConfig: baseConfig };
     }
-  }, [allAccounts, allTransactions, allSnapshots, hiddenSeries]);
+  }, [allAccounts, allTransactions, allSnapshots, hiddenSeries, majorAccounts, minorAccounts, isGroupingActive, baseConfig, shouldExplode]);
 
 
   if (loading) {
@@ -276,12 +291,23 @@ export function BalanceChart() {
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center gap-2">
-            <TrendingUp className="h-6 w-6 text-primary" />
-            <CardTitle>Andamento Saldi</CardTitle>
+        <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+                <TrendingUp className="h-6 w-6 text-primary" />
+                <CardTitle>Andamento Saldi</CardTitle>
+            </div>
+            {shouldExplode && (
+                <Button variant="outline" size="sm" onClick={handleResetView} className="animate-in fade-in">
+                    <Layers className="mr-2 h-4 w-4" />
+                    Vista Aggregata
+                </Button>
+            )}
         </div>
         <CardDescription>
-          Variazione dei saldi nel tempo. Clicca sulla legenda per mostrare/nascondere le linee.
+            {shouldExplode 
+              ? "Dettaglio dei conti raggruppati in 'Altri'. Clicca sulla legenda per filtrare."
+              : "Variazione dei saldi nel tempo. Clicca sulla legenda per mostrare/nascondere le linee."
+            }
         </CardDescription>
       </CardHeader>
       <CardContent className="h-96 w-full p-0 pr-2">
@@ -341,5 +367,7 @@ export function BalanceChart() {
     </Card>
   );
 }
+
+    
 
     

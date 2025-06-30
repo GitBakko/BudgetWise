@@ -3,24 +3,28 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import type { Account } from "@/types";
-import { collection, query, where, onSnapshot, orderBy } from "firebase/firestore";
+import { collection, query, where, onSnapshot, orderBy, writeBatch, getDocs, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Landmark, MoreHorizontal, Edit, BookUp } from "lucide-react";
+import { Landmark, MoreHorizontal, Edit, BookUp, Trash2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { EditAccountDialog } from "./EditAccountDialog";
 import { SetBalanceDialog } from "./SetBalanceDialog";
+import { DeleteAccountDialog } from "./DeleteAccountDialog";
+import { useToast } from "@/hooks/use-toast";
 
 export function AccountsList() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [settingBalanceAccount, setSettingBalanceAccount] = useState<Account | null>(null);
+  const [deletingAccount, setDeletingAccount] = useState<Account | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -52,6 +56,43 @@ export function AccountsList() {
 
     return () => unsubscribe();
   }, [user]);
+
+  const handleDeleteAccount = async (accountId: string) => {
+    try {
+        const batch = writeBatch(db);
+
+        // 1. Delete the account itself
+        const accountRef = doc(db, "accounts", accountId);
+        batch.delete(accountRef);
+
+        // 2. Delete associated transactions
+        const transQuery = query(collection(db, "transactions"), where("accountId", "==", accountId));
+        const transSnapshot = await getDocs(transQuery);
+        transSnapshot.forEach(doc => batch.delete(doc.ref));
+
+        // 3. Delete associated balance snapshots
+        const snapQuery = query(collection(db, "balanceSnapshots"), where("accountId", "==", accountId));
+        const snapSnapshot = await getDocs(snapQuery);
+        snapSnapshot.forEach(doc => batch.delete(doc.ref));
+
+        await batch.commit();
+
+        toast({
+            title: "Successo!",
+            description: "Conto e tutti i dati associati eliminati con successo."
+        })
+    } catch (error) {
+        console.error("Error deleting account:", error);
+        toast({
+            variant: "destructive",
+            title: "Errore",
+            description: "Impossibile eliminare il conto. Riprova."
+        });
+    } finally {
+        setDeletingAccount(null);
+    }
+  };
+
 
   if (loading) {
     return <Skeleton className="h-96 w-full" />;
@@ -114,6 +155,11 @@ export function AccountsList() {
                                 <BookUp className="mr-2 h-4 w-4" />
                                 <span>Imposta Saldo a Data</span>
                               </DropdownMenuItem>
+                               <DropdownMenuSeparator />
+                              <DropdownMenuItem onSelect={() => setDeletingAccount(account)} className="text-red-600 focus:text-red-600">
+                                <Trash2 className="mr-2 h-4 w-4"/>
+                                <span>Elimina Conto</span>
+                              </DropdownMenuItem>
                           </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -142,6 +188,15 @@ export function AccountsList() {
           account={settingBalanceAccount} 
           open={!!settingBalanceAccount} 
           onOpenChange={(isOpen) => !isOpen && setSettingBalanceAccount(null)}
+        />
+      )}
+
+      {deletingAccount && (
+        <DeleteAccountDialog 
+          account={deletingAccount}
+          open={!!deletingAccount}
+          onOpenChange={(isOpen) => !isOpen && setDeletingAccount(null)}
+          onConfirm={() => handleDeleteAccount(deletingAccount.id)}
         />
       )}
     </>

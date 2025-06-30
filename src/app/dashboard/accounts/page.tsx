@@ -2,6 +2,7 @@ import { AccountsList } from "@/components/dashboard/accounts/AccountsList";
 import { AddAccountDialog } from "@/components/dashboard/accounts/AddAccountDialog";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ImportBalancesDialog } from "@/components/dashboard/accounts/ImportBalancesDialog";
 
 export default function AccountsPage() {
   return (
@@ -13,7 +14,10 @@ export default function AccountsPage() {
             Gestisci i tuoi conti correnti e di risparmio.
           </p>
         </div>
-        <AddAccountDialog />
+        <div className="flex items-center gap-2">
+            <ImportBalancesDialog />
+            <AddAccountDialog />
+        </div>
       </div>
       <Suspense fallback={<Skeleton className="h-96 w-full" />}>
         <AccountsList />

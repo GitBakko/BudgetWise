@@ -7,7 +7,7 @@ import {
   signInWithEmailAndPassword,
   signOut,
 } from "firebase/auth";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { doc, setDoc, onSnapshot } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import type { UserProfile } from "@/types";
 
@@ -28,28 +28,51 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    let unsubscribeFirestore: (() => void) | null = null;
+
+    const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
+      if (unsubscribeFirestore) {
+        unsubscribeFirestore();
+      }
+
       if (firebaseUser) {
         const userDocRef = doc(db, "users", firebaseUser.uid);
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists()) {
-          setUser(userDoc.data() as UserProfile);
-        } else {
-          // Create user profile if it doesn't exist
-          const newUserProfile: UserProfile = {
-            uid: firebaseUser.uid,
-            email: firebaseUser.email,
-            role: "user",
-          };
-          await setDoc(userDocRef, newUserProfile);
-          setUser(newUserProfile);
-        }
+        unsubscribeFirestore = onSnapshot(
+          userDocRef,
+          (docSnap) => {
+            if (docSnap.exists()) {
+              setUser(docSnap.data() as UserProfile);
+            } else {
+              const newUserProfile: UserProfile = {
+                uid: firebaseUser.uid,
+                email: firebaseUser.email,
+                role: "user",
+              };
+              setDoc(userDocRef, newUserProfile).catch((err) => {
+                console.error("Failed to create user document:", err);
+              });
+              setUser(newUserProfile);
+            }
+            setLoading(false);
+          },
+          (error) => {
+            console.error("Auth Snapshot Error:", error);
+            setUser(null);
+            setLoading(false);
+          }
+        );
       } else {
         setUser(null);
+        setLoading(false);
       }
-      setLoading(false);
     });
-    return () => unsubscribe();
+
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeFirestore) {
+        unsubscribeFirestore();
+      }
+    };
   }, []);
 
   const signup = (email: string, pass: string) => {

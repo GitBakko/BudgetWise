@@ -25,6 +25,7 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
+import { FloatingAddButton } from "@/components/dashboard/FloatingAddButton";
 
 export default function DashboardLayout({
   children,
@@ -115,6 +116,7 @@ export default function DashboardLayout({
             <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
               {children}
             </main>
+            <FloatingAddButton />
           </SidebarInset>
         </div>
       </SidebarProvider>

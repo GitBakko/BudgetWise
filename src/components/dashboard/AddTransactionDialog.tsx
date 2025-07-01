@@ -14,14 +14,14 @@ import { useUserCategories } from "@/hooks/useUserCategories";
 import type { Category } from "@/types";
 
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar as CalendarIcon, PlusCircle, ArrowDownCircle, ArrowUpCircle, Landmark, Globe, ScanLine } from "lucide-react";
+import { Calendar as CalendarIcon, ArrowDownCircle, ArrowUpCircle, Landmark, Globe, ScanLine } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -43,8 +43,12 @@ const transactionSchema = z.object({
   notes: z.string().optional(),
 });
 
-export function AddTransactionDialog() {
-  const [open, setOpen] = useState(false);
+interface AddTransactionDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function AddTransactionDialog({ open, onOpenChange }: AddTransactionDialogProps) {
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -75,6 +79,13 @@ export function AddTransactionDialog() {
     setActiveTab("expense");
   };
 
+  const handleOpenChange = (isOpen: boolean) => {
+    if (!isOpen) {
+        resetForm();
+    }
+    onOpenChange(isOpen);
+  };
+
   const onTabChange = (value: string) => {
     const type = value as "income" | "expense";
     setActiveTab(type);
@@ -96,8 +107,7 @@ export function AddTransactionDialog() {
         createdAt: Timestamp.now(),
       });
       toast({ title: "Successo!", description: "Transazione aggiunta." });
-      resetForm();
-      setOpen(false);
+      onOpenChange(false);
     } catch (error) {
       toast({ variant: "destructive", title: "Errore", description: "Impossibile aggiungere la transazione." });
     } finally {
@@ -139,8 +149,7 @@ export function AddTransactionDialog() {
 
   return (
     <>
-      <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) resetForm(); setOpen(isOpen); }}>
-        <DialogTrigger asChild><Button><PlusCircle className="mr-2 h-4 w-4" />Aggiungi Transazione</Button></DialogTrigger>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Nuova Transazione</DialogTitle>

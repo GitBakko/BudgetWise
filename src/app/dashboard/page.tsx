@@ -1,5 +1,4 @@
 import { RecentTransactions } from "@/components/dashboard/RecentTransactions";
-import { AddTransactionDialog } from "@/components/dashboard/AddTransactionDialog";
 import { SavingsAdvisor } from "@/components/dashboard/SavingsAdvisor";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -18,7 +17,6 @@ export default function DashboardPage() {
             Ecco un riepilogo della tua attività finanziaria.
           </p>
         </div>
-        <AddTransactionDialog />
       </div>
 
       <Suspense fallback={<Skeleton className="h-24 w-full" />}>

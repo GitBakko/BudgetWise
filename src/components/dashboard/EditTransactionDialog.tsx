@@ -21,7 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar as CalendarIcon, ArrowDownCircle, ArrowUpCircle, Landmark, Globe, ScanLine, Loader2 } from "lucide-react";
+import { Calendar as CalendarIcon, ArrowDownCircle, ArrowUpCircle, Landmark, Globe, ScanLine, Loader2, FileImage } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -31,6 +31,7 @@ import DynamicIcon from "@/components/DynamicIcon";
 import { Skeleton } from "../ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { ScanReceiptDialog } from "./ScanReceiptDialog";
+import { ImportTransactionsDialog } from "./ImportTransactionsDialog";
 import type { OcrReceiptOutput } from "@/ai/flows/receiptOcrFlow";
 
 const transactionSchema = z.object({
@@ -58,6 +59,7 @@ export function EditTransactionDialog({ transaction, open, onOpenChange }: EditT
   const { categories, loading: categoriesLoading } = useUserCategories();
   
   const [isScanOpen, setScanOpen] = useState(false);
+  const [isImportOpen, setImportOpen] = useState(false);
 
   const defaultGeneralCategory: Category = {
     id: 'default-general-category', name: 'generale', type: 'general',
@@ -145,6 +147,11 @@ export function EditTransactionDialog({ transaction, open, onOpenChange }: EditT
     setScanOpen(false);
   };
 
+  const handleImportComplete = () => {
+    setImportOpen(false);
+    onOpenChange(false);
+  };
+
   const selectedAccountId = form.watch("accountId");
   const selectedAccount = accounts.find(a => a.id === selectedAccountId);
 
@@ -176,9 +183,13 @@ export function EditTransactionDialog({ transaction, open, onOpenChange }: EditT
                         <FormItem><FormLabel>Importo</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
                       )} />
                     </div>
-                    <Button type="button" variant="outline" size="icon" onClick={() => setScanOpen(true)}>
+                    <Button type="button" variant="outline" size="icon" onClick={() => setScanOpen(true)} title="Scansiona Scontrino">
                         <ScanLine className="h-5 w-5" />
                         <span className="sr-only">Scansiona Scontrino</span>
+                    </Button>
+                    <Button type="button" variant="outline" size="icon" onClick={() => setImportOpen(true)} title="Importa da Screenshot">
+                        <FileImage className="h-5 w-5" />
+                        <span className="sr-only">Importa da Screenshot</span>
                     </Button>
                  </div>
                 <FormField control={form.control} name="description" render={({ field }) => (
@@ -219,6 +230,7 @@ export function EditTransactionDialog({ transaction, open, onOpenChange }: EditT
         </DialogContent>
       </Dialog>
       <ScanReceiptDialog open={isScanOpen} onOpenChange={setScanOpen} onScanComplete={handleScanComplete} />
+      <ImportTransactionsDialog open={isImportOpen} onOpenChange={setImportOpen} onImportComplete={handleImportComplete} />
     </>
   );
 }

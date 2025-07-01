@@ -4,3 +4,4 @@ import "./flows/savingsAdvisor.js";
 import "./flows/generateIconFlow.js";
 import "./flows/suggestCategoryIcon.js";
 import "./flows/receiptOcrFlow.js";
+import "./flows/extractTransactionsFlow.js";

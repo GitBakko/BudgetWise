@@ -28,7 +28,15 @@ const chartConfig = {
     Spese: {
         label: "Spese",
         color: "hsl(var(--chart-3))",
-    }
+    },
+    "Entrate Prec.": {
+        label: "Entrate Prec.",
+        color: "hsl(var(--chart-2) / 0.4)",
+    },
+    "Spese Prec.": {
+        label: "Spese Prec.",
+        color: "hsl(var(--chart-3) / 0.4)",
+    },
 } satisfies ChartConfig;
 
 export function TransactionsBarChart({ timeframe }: TransactionsBarChartProps) {
@@ -40,7 +48,7 @@ export function TransactionsBarChart({ timeframe }: TransactionsBarChartProps) {
     : 'Riepilogo Transazioni Annuale';
   const description = timeframe === 'month' 
     ? 'Entrate e spese giorno per giorno in questo mese.' 
-    : 'Entrate e spese totali per ogni mese dell\'ultimo anno.';
+    : 'Confronto entrate e spese totali per ogni mese dell\'ultimo anno.';
 
   
   if(loading) {
@@ -83,6 +91,8 @@ export function TransactionsBarChart({ timeframe }: TransactionsBarChartProps) {
                     <Legend />
                     <Bar dataKey="Entrate" fill="var(--color-Entrate)" radius={4} />
                     <Bar dataKey="Spese" fill="var(--color-Spese)" radius={4} />
+                    {timeframe === 'year' && <Bar dataKey="Entrate Prec." fill="var(--color-Entrate-Prec.)" radius={4} />}
+                    {timeframe === 'year' && <Bar dataKey="Spese Prec." fill="var(--color-Spese-Prec.)" radius={4} />}
                 </BarChart>
             </ChartContainer>
         ) : (

@@ -69,6 +69,8 @@ export default {
           border: 'hsl(var(--sidebar-border))',
           ring: 'hsl(var(--sidebar-ring))',
         },
+        "ai-primary": "hsl(var(--ai-primary))",
+        "ai-primary-foreground": "hsl(var(--ai-primary-foreground))",
       },
       borderRadius: {
         lg: 'var(--radius)',

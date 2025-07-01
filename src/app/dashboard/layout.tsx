@@ -93,7 +93,7 @@ export default function DashboardLayout({
                       <Link href={item.href}>
                         <item.icon className={cn(
                           "transition-colors",
-                          item.isAi && "text-[hsl(var(--ai-primary))] group-hover:text-ai-primary-foreground"
+                          item.isAi && "text-ai-primary group-hover:text-ai-primary-foreground"
                         )} />
                         <span>{item.label}</span>
                       </Link>

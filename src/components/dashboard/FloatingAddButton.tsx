@@ -50,9 +50,9 @@ export function FloatingAddButton() {
                 ref={buttonRef}
                 onClick={handleClick}
                 className={cn(
-                    "fixed bottom-6 right-6 z-40 flex items-center justify-center gap-2 text-white font-semibold shadow-2xl transition-all duration-300 ease-in-out rounded-full group",
+                    "fixed bottom-6 right-6 z-40 flex items-center text-white font-semibold shadow-2xl transition-all duration-300 ease-in-out rounded-full group",
                     "bg-gradient-to-br from-[hsl(var(--ai-gradient-from))] to-[hsl(var(--ai-gradient-to))] hover:opacity-90",
-                    isExpanded ? "w-60 h-16" : "w-16 h-16"
+                    isExpanded ? "w-60 h-16 pl-4 pr-6 gap-2" : "w-16 h-16 justify-center"
                 )}
                 aria-label={isExpanded ? "Apri modale per aggiungere transazione" : "Espandi per aggiungere transazione"}
                 aria-expanded={isExpanded}

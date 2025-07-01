@@ -80,7 +80,10 @@ export default function DashboardLayout({
                     <SidebarMenuButton
                       asChild
                       variant="ghost"
-                      className="w-full justify-start"
+                      className={cn(
+                        "w-full justify-start",
+                        item.isAi && "group transition-colors duration-300 ease-in-out hover:bg-gradient-to-r hover:from-[hsl(var(--ai-gradient-from))] hover:to-[hsl(var(--ai-gradient-to))] hover:text-ai-primary-foreground"
+                      )}
                       tooltip={{
                         children: item.label,
                         side: 'right',
@@ -88,7 +91,9 @@ export default function DashboardLayout({
                       }}
                     >
                       <Link href={item.href}>
-                        <item.icon className={cn(item.isAi && "text-[hsl(var(--ai-primary))]")} />
+                        <item.icon className={cn(
+                          item.isAi && "text-[hsl(var(--ai-primary))] group-hover:text-ai-primary-foreground"
+                        )} />
                         <span>{item.label}</span>
                       </Link>
                     </SidebarMenuButton>

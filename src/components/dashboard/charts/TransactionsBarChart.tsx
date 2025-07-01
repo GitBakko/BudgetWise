@@ -12,6 +12,9 @@ import { useTransactionsSummary } from "@/hooks/useTransactionsSummary";
 import { ChartContainer, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import { Skeleton } from "@/components/ui/skeleton";
+import { format } from "date-fns";
+import { it } from "date-fns/locale";
+import { BarChart as BarChartIcon } from "lucide-react";
 
 interface TransactionsBarChartProps {
   timeframe: 'month' | 'year';
@@ -30,8 +33,15 @@ const chartConfig = {
 
 export function TransactionsBarChart({ timeframe }: TransactionsBarChartProps) {
   const { loading, chartData } = useTransactionsSummary(timeframe);
-  const title = timeframe === 'month' ? 'Riepilogo Mensile' : 'Riepilogo Annuale';
-  const description = timeframe === 'month' ? 'Entrate e spese giorno per giorno' : 'Entrate e spese mese per mese';
+  
+  const currentMonth = format(new Date(), "MMMM yyyy", { locale: it });
+  const title = timeframe === 'month' 
+    ? `Transazioni di ${currentMonth.charAt(0).toUpperCase() + currentMonth.slice(1)}` 
+    : 'Riepilogo Transazioni Annuale';
+  const description = timeframe === 'month' 
+    ? 'Entrate e spese giorno per giorno in questo mese.' 
+    : 'Entrate e spese totali per ogni mese dell\'ultimo anno.';
+
   
   if(loading) {
       return <Skeleton className="w-full h-96" />
@@ -40,8 +50,13 @@ export function TransactionsBarChart({ timeframe }: TransactionsBarChartProps) {
   return (
     <Card>
         <CardHeader>
-            <CardTitle>{title}</CardTitle>
-            <CardDescription>{description}</CardDescription>
+            <div className="flex items-center gap-3">
+                <BarChartIcon className="h-6 w-6 text-primary" />
+                <div>
+                    <CardTitle>{title}</CardTitle>
+                    <CardDescription>{description}</CardDescription>
+                </div>
+            </div>
         </CardHeader>
         <CardContent className="h-80 w-full p-0 pr-2">
         {chartData.length > 0 ? (

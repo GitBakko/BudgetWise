@@ -82,7 +82,7 @@ export default function DashboardLayout({
                       variant="ghost"
                       className={cn(
                         "w-full justify-start",
-                        item.isAi && "group transition-colors duration-300 ease-in-out hover:bg-gradient-to-r hover:from-[hsl(var(--ai-gradient-from))] hover:to-[hsl(var(--ai-gradient-to))] hover:text-ai-primary-foreground"
+                        item.isAi && "group/ai transition-colors duration-300 ease-in-out hover:bg-gradient-to-r hover:from-[hsl(var(--ai-gradient-from))] hover:to-[hsl(var(--ai-gradient-to))] hover:text-ai-primary-foreground"
                       )}
                       tooltip={{
                         children: item.label,
@@ -93,7 +93,7 @@ export default function DashboardLayout({
                       <Link href={item.href}>
                         <item.icon className={cn(
                           "transition-colors",
-                          item.isAi && "text-ai-primary group-hover:text-ai-primary-foreground"
+                          item.isAi && "text-ai-primary group-hover/ai:text-ai-primary-foreground"
                         )} />
                         <span>{item.label}</span>
                       </Link>

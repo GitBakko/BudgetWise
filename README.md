@@ -2,7 +2,7 @@
 
 **🎯 Status**: Authentication System Complete ✅  
 **🚀 Tech Stack**: Angular 20 + .NET 9 + Modern Patterns  
-**📅 Last Updated**: August 1, 2025
+**📅 Last Updated**: August 2, 2025
 
 BudgetWise is a modern personal finance management application built with **100% Modern Angular patterns** (Signals + Async/Await) and .NET 9 Web API.
 
@@ -13,7 +13,24 @@ This project follows **STRICT modern patterns**:
 - ✅ **Async/Await + Promises** for ALL HTTP operations (NO Observable chains)
 - ✅ **Signal-based reactive programming** throughout the application
 
-**📋 See**: `DEVELOPMENT-RULES.md` for mandatory patterns and `DEVELOPMENT-STATUS.md` for current progress.
+**📋 Documentation**:
+- `DEVELOPMENT-RULES.md` - Mandatory development patterns
+- `DEVELOPMENT-STATUS.md` - Current project progress
+- **`BUDGETWISE-UI-GUIDELINES.md`** - Complete UI/UX design system
+- **`QUICK-REFERENCE.md`** - Quick component reference guide
+
+## 🎨 **UI Design System**
+
+BudgetWise uses a **"Professional Modern"** approach that balances:
+- **60% Professionalità** - Serious, reliable interface for financial data
+- **40% Carattere** - Subtle gradients, micro-animations, brand colors
+
+**Tech Stack UI**:
+- **PrimeNG 20.0.1** - Component library
+- **Tailwind CSS 4** - Utility-first styling  
+- **tailwindcss-primeui** - Official integration plugin
+
+**🎯 See `BUDGETWISE-UI-GUIDELINES.md` for complete design system documentation.**
 
 ---
 

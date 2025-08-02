@@ -220,20 +220,18 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+// Abilita OpenAPI e Scalar sempre per development (anche in Production per debug)
+app.MapOpenApi();
+
+// Configurazione Scalar per documentazione API interattiva
+app.MapScalarApiReference(options =>
 {
-    app.MapOpenApi();
-    
-    // Configurazione Scalar per documentazione API interattiva
-    app.MapScalarApiReference(options =>
-    {
-        options
-            .WithTitle("BudgetWise API Documentation")
-            .WithTheme(ScalarTheme.Purple)
-            .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient)
-            .WithSearchHotKey("k");
-    });
-}
+    options
+        .WithTitle("BudgetWise API Documentation")
+        .WithTheme(ScalarTheme.Purple)
+        .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient)
+        .WithSearchHotKey("k");
+});
 
 // Middleware pipeline
 app.UseSerilogRequestLogging();

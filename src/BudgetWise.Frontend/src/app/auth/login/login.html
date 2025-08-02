@@ -1,144 +1,160 @@
-<!-- Login Form - BudgetWise -->
-<div class="min-h-screen flex items-center justify-center bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
-  <div class="max-w-md w-full space-y-8">
+<!-- Login Form - BudgetWise Professional Modern -->
+<div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-primary-50 p-4">
+  <div class="w-full max-w-md">
     
-    <!-- Header -->
-    <div>
-      <div class="mx-auto h-16 w-16 flex items-center justify-center">
+    <!-- Logo e Header -->
+    <div class="text-center mb-8">
+      <div class="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-primary-500 to-primary-600 rounded-2xl shadow-lg flex items-center justify-center">
         <img 
           src="assets/images/icon-192x192.png" 
           alt="BudgetWise Logo" 
-          class="h-16 w-16 rounded-xl shadow-lg"
+          class="w-12 h-12 rounded-lg"
         />
       </div>
-      <h2 class="mt-6 text-center text-3xl font-bold text-slate-900">
-        Accedi a BudgetWise
-      </h2>
-      <p class="mt-2 text-center text-sm text-slate-600">
-        Gestisci le tue finanze in modo intelligente
-      </p>
+      <h1 class="text-3xl font-bold text-slate-900 mb-2">Accedi a BudgetWise</h1>
+      <p class="text-slate-600">Gestisci le tue finanze in modo intelligente</p>
     </div>
 
-    <!-- Form -->
-    <form class="mt-8 space-y-6" [formGroup]="loginForm" (ngSubmit)="onSubmit()">
-      <div class="space-y-4">
-        <!-- Email -->
-        <div>
-          <label for="email" class="block text-sm font-medium text-secondary-700">
-            Email
-          </label>
-          <input
+    <!-- Card del Form -->
+    <div class="bg-white rounded-2xl shadow-xl border border-slate-200/50 p-8 backdrop-blur-sm">
+      
+      <form 
+        [formGroup]="loginForm" 
+        (ngSubmit)="onSubmit()"
+        class="space-y-6"
+        role="form"
+        aria-label="Modulo di accesso"
+      >
+        
+        <!-- Campo Email -->
+        <div class="space-y-2">
+          <label for="email" class="block text-sm font-semibold text-slate-700">Email</label>
+          <input 
+            pInputText 
             id="email"
-            name="email"
-            type="email"
             formControlName="email"
             autocomplete="username"
             [disabled]="isLoading()"
-            class="mt-1 input-field block w-full"
-            [class.opacity-50]="isLoading()"
-            placeholder="la.tua@email.com"
+            placeholder="nome@azienda.com"
+            [class.p-invalid]="isFieldInvalid('email')"
+            class="w-full"
+            aria-describedby="email-help"
           />
-          @if (email?.invalid && email?.touched) {
-            <p class="mt-1 text-sm text-red-600">
-              @if (email?.errors?.['required']) {
-                L'email è richiesta
-              }
-              @if (email?.errors?.['email']) {
-                Inserisci un'email valida
-              }
-            </p>
+          @if (isFieldInvalid('email')) {
+            <small class="text-red-500 text-sm flex items-center gap-1" id="email-help">
+              <i class="pi pi-exclamation-triangle text-xs"></i>
+              {{ getFieldError('email') }}
+            </small>
           }
         </div>
 
-        <!-- Password -->
-        <div>
-          <label for="password" class="block text-sm font-medium text-secondary-700">
-            Password
-          </label>
-          <input
-            id="password"
-            name="password"
-            type="password"
+        <!-- Campo Password -->
+        <div class="space-y-2">
+          <label for="password" class="block text-sm font-semibold text-slate-700">Password</label>
+          <p-password 
+            inputId="password"
             formControlName="password"
-            autocomplete="current-password"
             [disabled]="isLoading()"
-            class="mt-1 input-field block w-full"
-            [class.opacity-50]="isLoading()"
-            placeholder="••••••••"
-          />
-          @if (password?.invalid && password?.touched) {
-            <p class="mt-1 text-sm text-red-600">
-              @if (password?.errors?.['required']) {
-                La password è richiesta
-              }
-              @if (password?.errors?.['minlength']) {
-                La password deve essere di almeno 6 caratteri
-              }
-            </p>
+            [feedback]="false"
+            [toggleMask]="true"
+            autocomplete="current-password"
+            placeholder="Inserisci la password"
+            [class.p-invalid]="isFieldInvalid('password')"
+            styleClass="w-full"
+            inputStyleClass="w-full"
+            aria-describedby="password-help"
+          ></p-password>
+          @if (isFieldInvalid('password')) {
+            <small class="text-red-500 text-sm flex items-center gap-1" id="password-help">
+              <i class="pi pi-exclamation-triangle text-xs"></i>
+              {{ getFieldError('password') }}
+            </small>
           }
         </div>
-      </div>
 
-      <!-- Success Message -->
-      @if (successMessage()) {
-        <div class="bg-green-50 border border-green-200 rounded-md p-4">
-          <div class="flex">
-            <div class="flex-shrink-0">
-              <svg class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-              </svg>
-            </div>
-            <div class="ml-3">
-              <p class="text-sm text-green-600 font-medium">{{ successMessage() }}</p>
-            </div>
+        <!-- Ricordami e Password dimenticata -->
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <p-checkbox 
+              formControlName="rememberMe"
+              inputId="rememberMe"
+              [disabled]="isLoading()"
+              [binary]="true"
+            ></p-checkbox>
+            <label for="rememberMe" class="text-sm text-slate-600">Ricordami</label>
           </div>
-        </div>
-      }
-
-      <!-- Error Message -->
-      @if (errorMessage() && errorMessage() !== '') {
-        <div class="bg-red-50 border border-red-200 rounded-md p-4">
-          <div class="flex">
-            <div class="flex-shrink-0">
-              <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
-              </svg>
-            </div>
-            <div class="ml-3">
-              <p class="text-sm text-red-600">{{ errorMessage() }}</p>
-            </div>
-          </div>
-        </div>
-      }
-
-      <!-- Submit Button -->
-      <div>
-        <button
-          type="submit"
-          [disabled]="loginForm.invalid || isLoading()"
-          class="group relative w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          @if (isLoading()) {
-            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            Accesso in corso...
-          } @else {
-            Accedi
-          }
-        </button>
-      </div>
-
-      <!-- Register Link -->
-      <div class="text-center">
-        <p class="text-sm text-secondary-600">
-          Non hai un account?
-          <a routerLink="/auth/register" class="font-medium text-primary-600 hover:text-primary-500">
-            Registrati qui
+          
+          <a 
+            href="#" 
+            class="text-sm text-primary-600 hover:text-primary-700 font-medium transition-colors duration-200"
+            (click)="onForgotPassword($event)"
+          >
+            Password dimenticata?
           </a>
-        </p>
+        </div>
+
+        <!-- Messaggi -->
+        @if (successMessage()) {
+          <div class="bg-green-50 border-l-4 border-green-400 rounded-md p-4 flex items-center gap-3">
+            <i class="pi pi-check-circle text-green-600 text-lg"></i>
+            <span class="text-green-800 text-sm font-medium">{{ successMessage() }}</span>
+          </div>
+        }
+
+        @if (errorMessage() && errorMessage() !== '') {
+          <div class="bg-red-50 border-l-4 border-red-400 rounded-md p-4 flex items-center gap-3">
+            <i class="pi pi-exclamation-triangle text-red-600 text-lg"></i>
+            <span class="text-red-800 text-sm font-medium">{{ errorMessage() }}</span>
+          </div>
+        }
+
+        <!-- Pulsante Accedi -->
+        <p-button 
+          type="submit"
+          label="Accedi"
+          icon="pi pi-sign-in"
+          [disabled]="loginForm.invalid || isLoading()"
+          [loading]="isLoading()"
+          styleClass="w-full login-btn"
+          size="large"
+        ></p-button>
+        
+      </form>
+
+      <!-- Divider -->
+      <div class="mt-8 mb-6">
+        <div class="relative">
+          <div class="absolute inset-0 flex items-center">
+            <div class="w-full border-t border-slate-200"></div>
+          </div>
+          <div class="relative flex justify-center text-sm">
+            <span class="px-4 bg-white text-slate-500">Non hai un account?</span>
+          </div>
+        </div>
       </div>
-    </form>
+
+      <!-- Link Registrazione -->
+      <div class="text-center">
+        <p-button 
+          label="Crea nuovo account"
+          icon="pi pi-user-plus"
+          [text]="true"
+          (onClick)="navigateToRegister()"
+          [disabled]="isLoading()"
+          styleClass="text-primary-600 hover:text-primary-700 font-medium"
+        ></p-button>
+      </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="text-center mt-8">
+      <p class="text-xs text-slate-400">
+        Accedendo accetti i nostri 
+        <a href="#" class="text-primary-600 hover:text-primary-700 underline">Termini di Servizio</a> 
+        e la 
+        <a href="#" class="text-primary-600 hover:text-primary-700 underline">Privacy Policy</a>
+      </p>
+    </div>
   </div>
 </div>

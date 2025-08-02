@@ -1,12 +1,30 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Router, RouterLink, ActivatedRoute } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService, LoginRequest } from '../../core/services/auth.service';
+
+// 🎨 PrimeNG Components - Importati secondo le linee guida
+import { InputTextModule } from 'primeng/inputtext';
+import { PasswordModule } from 'primeng/password';
+import { ButtonModule } from 'primeng/button';
+import { CheckboxModule } from 'primeng/checkbox';
+import { MessageModule } from 'primeng/message';
+import { FloatLabelModule } from 'primeng/floatlabel';
 
 @Component({
   selector: 'app-login',
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [
+    CommonModule, 
+    ReactiveFormsModule, 
+    // 🎨 PrimeNG Modules
+    InputTextModule,
+    PasswordModule,
+    ButtonModule,
+    CheckboxModule,
+    MessageModule,
+    FloatLabelModule
+  ],
   templateUrl: './login.html',
   styleUrl: './login.scss'
 })
@@ -28,7 +46,8 @@ export class LoginComponent implements OnInit {
   constructor() {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]]
+      password: ['', [Validators.required, Validators.minLength(6)]],
+      rememberMe: [false] // 🔧 Aggiunto campo "Ricordami"
     });
 
     // Pulisci i messaggi quando l'utente inizia a digitare
@@ -166,10 +185,42 @@ export class LoginComponent implements OnInit {
   getFieldError(fieldName: string): string {
     const field = this.loginForm.get(fieldName);
     if (field?.errors) {
-      if (field.errors['required']) return `${fieldName} è richiesto`;
+      if (field.errors['required']) return `${this.getFieldDisplayName(fieldName)} è richiesto`;
       if (field.errors['email']) return 'Inserisci un email valida';
-      if (field.errors['minlength']) return `${fieldName} deve essere di almeno ${field.errors['minlength'].requiredLength} caratteri`;
+      if (field.errors['minlength']) return `${this.getFieldDisplayName(fieldName)} deve essere di almeno ${field.errors['minlength'].requiredLength} caratteri`;
     }
     return '';
+  }
+
+  // 🎯 Nuovi metodi per gestire UI
+  private getFieldDisplayName(fieldName: string): string {
+    const fieldNames: { [key: string]: string } = {
+      'email': 'Email',
+      'password': 'Password'
+    };
+    return fieldNames[fieldName] || fieldName;
+  }
+
+  /**
+   * 🔗 Gestisce il click su "Password dimenticata?"
+   */
+  onForgotPassword(event: Event): void {
+    event.preventDefault();
+    // TODO: Implementare logica per password dimenticata
+    // Per ora mostro un messaggio
+    this.errorMessage.set('Funzionalità "Password dimenticata" in arrivo!');
+    
+    setTimeout(() => {
+      this.errorMessage.set('');
+    }, 3000);
+  }
+
+  /**
+   * 🎯 Naviga alla pagina di registrazione
+   */
+  navigateToRegister(): void {
+    if (!this.isLoading()) {
+      this.router.navigate(['/auth/register']);
+    }
   }
 }

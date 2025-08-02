@@ -1,6 +1,9 @@
 /* BudgetWise Global Styles - Tailwind CSS v4 */
 @use "tailwindcss";
 
+/* 🎨 PrimeNG Icons */
+@import "primeicons/primeicons.css";
+
 /* BudgetWise brand colors and Tailwind variables */
 :root {
   /* BudgetWise brand colors (green primary) */

@@ -1,0 +1,6 @@
+@BudgetWise.Api_HostAddress = http://localhost:5194
+
+GET {{BudgetWise.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using BudgetWise.Data.Entities;
+using BudgetWise.Data.Models;
 
 namespace BudgetWise.Data;
 

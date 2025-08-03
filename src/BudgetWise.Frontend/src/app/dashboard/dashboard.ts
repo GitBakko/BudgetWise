@@ -23,6 +23,19 @@ export class DashboardComponent {
   }
 
   /**
+   * 📱 MOBILE-FIRST: Navigate to Account Management
+   */
+  async navigateToAccounts(): Promise<void> {
+    try {
+      console.log('🏦 NAVIGATION - Navigating to accounts...');
+      await this.router.navigate(['/accounts']);
+      console.log('✅ NAVIGATION - Successfully navigated to accounts');
+    } catch (error) {
+      console.error('❌ NAVIGATION - Error navigating to accounts:', error);
+    }
+  }
+
+  /**
    * Effettua il logout e reindirizza al login
    */
   async onLogout(): Promise<void> {

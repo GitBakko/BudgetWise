@@ -1,10 +1,24 @@
 # BudgetWise - Modern Personal Finance Management
 
-**🎯 Status**: Authentication System Complete ✅  
-**🚀 Tech Stack**: Angular 20 + .NET 9 + Modern Patterns  
+**🎯 Status**: Backend Architecture Complete ✅ + Authentication System Complete ✅  
+**🚀 Tech Stack**: Angular 20 + .NET 9 + Repository Pattern  
 **📅 Last Updated**: August 2, 2025
 
-BudgetWise is a modern personal finance management application built with **100% Modern Angular patterns** (Signals + Async/Await) and .NET 9 Web API.
+BudgetWise is a modern personal finance management application built with **100% Modern Angular patterns** (Signals + Async/Await) and .NET 9 Web API with **strict Repository Pattern**.
+
+## 🏛️ **CRITICAL: Backend Architecture Rules**
+
+**⚠️ MANDATORY ARCHITECTURE - NO EXCEPTIONS:**
+- 📖 **[READ ARCHITECTURE RULES](./ARCHITECTURE-RULES.md)** ← **OBBLIGATORIO**
+- 📖 **[FULL BACKEND ARCHITECTURE](./BACKEND-ARCHITECTURE.md)** ← **DOCUMENTAZIONE COMPLETA**
+
+### 🚨 **NON-NEGOTIABLE PATTERNS**
+- ✅ **Entity Framework Core 9 ONLY** - No SqlConnection/SqlCommand
+- ✅ **Repository Pattern** - Every entity has its repository  
+- ✅ **Clean Architecture** - API → Core → Data layers
+- ✅ **Dependency Injection** - All services in Program.cs
+- ❌ **NO DbContext in Controllers** - Only in Repositories
+- ❌ **NO Business Logic in Controllers** - Only in Services
 
 ## 🚨 **IMPORTANT: Development Philosophy**
 
@@ -12,6 +26,23 @@ This project follows **STRICT modern patterns**:
 - ✅ **Angular Signals** for ALL state management (NO BehaviorSubject)
 - ✅ **Async/Await + Promises** for ALL HTTP operations (NO Observable chains)
 - ✅ **Signal-based reactive programming** throughout the application
+- 📱 **MOBILE-FIRST** approach - Primary target is mobile devices
+
+### 🔧 **CRITICAL: API Configuration**
+
+**❌ NEVER use Angular proxy configuration (`proxy.conf.json`)**
+
+**✅ ALWAYS use `app-config.json` approach:**
+- All API endpoints configured in `src/assets/config/app-config.json`
+- Services MUST use `ConfigService.getApiUrl()` for API calls
+- Same pattern as existing `AuthService` implementation
+
+```typescript
+// ✅ CORRECT Pattern
+private getApiUrl(): string {
+  return `${this.configService.getApiUrl()}/api/feature`;
+}
+```
 
 **📋 Documentation**:
 - `DEVELOPMENT-RULES.md` - Mandatory development patterns

@@ -1,0 +1,19 @@
+{
+  "apiUrl": "https://localhost:7268",
+  "environment": "development",
+  "features": {
+    "enableLogging": true,
+    "enableAnalytics": false,
+    "enableDebugMode": true
+  },
+  "auth": {
+    "tokenStorageKey": "budgetwise_token",
+    "refreshTokenStorageKey": "budgetwise_refresh_token",
+    "tokenExpirationBuffer": 300
+  },
+  "ui": {
+    "theme": "light",
+    "language": "it-IT",
+    "dateFormat": "dd/MM/yyyy"
+  }
+}

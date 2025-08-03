@@ -6,9 +6,8 @@ using System.Text;
 using Serilog;
 using Scalar.AspNetCore;
 using BudgetWise.Data;
-using BudgetWise.Data.Entities;
+using BudgetWise.Data.Models;
 using BudgetWise.Core.Interfaces;
-using BudgetWise.Data.Services;
 
 // Crea il builder prima per accedere alla configurazione
 var builder = WebApplication.CreateBuilder(args);
@@ -214,8 +213,9 @@ Tutte le operazioni sono tracciate tramite Serilog con structured logging.
     });
 });
 
-// Registrazione dei servizi
-builder.Services.AddScoped<IAuthService, AuthService>();
+// Repository Pattern: Register repositories and services
+builder.Services.AddScoped<BudgetWise.Data.Interfaces.IAccountRepository, BudgetWise.Data.Repositories.AccountRepository>();
+builder.Services.AddScoped<BudgetWise.Core.Interfaces.IAccountService, BudgetWise.Core.Services.AccountService>();
 
 var app = builder.Build();
 

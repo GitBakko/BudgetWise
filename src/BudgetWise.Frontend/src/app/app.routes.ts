@@ -24,6 +24,13 @@ export const routes: Routes = [
     canActivate: [AuthGuard]
   },
   
+  // 📱 MOBILE-FIRST: Account Management
+  { 
+    path: 'accounts', 
+    loadComponent: () => import('./accounts/accounts.component').then(m => m.AccountsComponent),
+    canActivate: [AuthGuard]
+  },
+  
   // Catch-all route
   { path: '**', redirectTo: '/dashboard' }
 ];

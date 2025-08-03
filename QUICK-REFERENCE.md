@@ -1,11 +1,56 @@
 # 🚀 BudgetWise Quick Reference
 
+## 🔧 API Configuration (CRITICAL)
+
+### Service Pattern with ConfigService
+```typescript
+import { Injectable, inject, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { lastValueFrom } from 'rxjs';
+import { ConfigService } from './config.service';
+
+@Injectable({ providedIn: 'root' })
+export class FeatureService {
+  private http = inject(HttpClient);
+  private configService = inject(ConfigService);
+  
+  // ✅ MANDATORY: Use ConfigService for API URLs
+  private getApiUrl(): string {
+    return `${this.configService.getApiUrl()}/api/feature`;
+  }
+  
+  async loadDataAsync(): Promise<any[]> {
+    return await lastValueFrom(
+      this.http.get<any[]>(this.getApiUrl())
+    );
+  }
+}
+```
+
+### ❌ NEVER Use These Approaches
+```typescript
+// ❌ WRONG: Hardcoded URLs
+this.http.get('/api/data')
+
+// ❌ WRONG: Proxy configuration
+// Don't use proxy.conf.json
+
+// ❌ WRONG: Environment variables directly
+this.http.get(environment.apiUrl + '/api/data')
+```
+
 ## Configurazione Base
 
 ### Import Essenziali
 ```typescript
-// Component imports
-import { InputTextModule, ButtonModule, PasswordModule, CheckboxModule } from 'primeng';
+// Component imports - ⚠️ IMPORTANT: Use SelectModule, NOT DropdownModule
+import { 
+  InputTextModule, 
+  ButtonModule, 
+  PasswordModule, 
+  CheckboxModule,
+  SelectModule // ✅ CORRECT: Use SelectModule for dropdowns
+} from 'primeng';
 import { ReactiveFormsModule, CommonModule } from '@angular/common';
 ```
 
@@ -46,6 +91,30 @@ import { ReactiveFormsModule, CommonModule } from '@angular/common';
   styleClass="w-full primary-btn"
   size="large"
 ></p-button>
+```
+
+### ⚠️ Select Component (p-select)
+**🚫 NON usare p-dropdown!**  
+**✅ USA p-select editable:**
+```html
+<p-select 
+  formControlName="field"
+  [options]="options"
+  optionLabel="label"
+  optionValue="value"
+  [editable]="true"
+  [filter]="true"
+  [showClear]="true"
+  placeholder="Seleziona..."
+  class="w-full">
+  
+  <ng-template #selectedItem let-option>
+    <div *ngIf="option" class="flex items-center gap-2">
+      <i [class]="'pi ' + option.icon"></i>
+      <span>{{ option.label }}</span>
+    </div>
+  </ng-template>
+</p-select>
 ```
 
 ### Input Field

@@ -30,11 +30,12 @@ BudgetWise adotta un approccio **"Professional Modern"** che bilancia:
 - Dettagli moderni (ombre, arrotondamenti)
 
 ### **Principi Fondamentali**
-1. **Funzionalità prima dell'estetica**
-2. **Coerenza visiva** in tutti i componenti
-3. **Accessibilità WCAG 2.1** come standard
-4. **Performance** - animazioni hardware-accelerated
-5. **Responsive design** mobile-first
+1. **📱 MOBILE-FIRST** - Design primario per dispositivi mobili
+2. **Funzionalità prima dell'estetica**
+3. **Coerenza visiva** in tutti i componenti
+4. **Accessibilità WCAG 2.1** come standard
+5. **Performance** - animazioni hardware-accelerated
+6. **Responsive design** con breakpoint strategici
 
 ---
 
@@ -198,6 +199,60 @@ yellow-500   #eab308  // Warning
 ></p-button>
 ```
 
+### **⚠️ IMPORTANTE: Select Component (p-select)**
+**🚫 NON usare p-dropdown - È obsoleto!**  
+**✅ USA SEMPRE p-select - È il componente corretto**
+
+```html
+<!-- ✅ CORRETTO: p-select editable con filtro -->
+<p-select 
+  formControlName="fieldName"
+  [options]="options"
+  optionLabel="label"
+  optionValue="value"
+  placeholder="Seleziona un'opzione"
+  [editable]="true"
+  [showClear]="true"
+  [filter]="true"
+  filterBy="label"
+  class="w-full">
+  
+  <!-- Template per l'elemento selezionato -->
+  <ng-template #selectedItem let-selectedOption>
+    <div *ngIf="selectedOption" class="flex items-center gap-2">
+      <i [class]="'pi ' + selectedOption.icon"></i>
+      <span>{{ selectedOption.label }}</span>
+    </div>
+  </ng-template>
+  
+  <!-- Template per gli elementi della lista -->
+  <ng-template #item let-option>
+    <div class="flex items-center gap-2 p-2">
+      <i [class]="'pi ' + option.icon"></i>
+      <span>{{ option.label }}</span>
+    </div>
+  </ng-template>
+</p-select>
+```
+
+**🎯 Proprietà essenziali per p-select:**
+- `[editable]="true"` - Permette digitazione manuale
+- `[filter]="true"` - Abilita ricerca nelle opzioni
+- `[showClear]="true"` - Mostra pulsante di pulizia
+- `filterBy="label"` - Campo su cui filtrare
+- Templates personalizzati per icone e layout
+
+**📱 Mobile-First per p-select:**
+```scss
+::ng-deep .p-select {
+  @apply min-h-[3rem]; // Touch-friendly
+  
+  .p-select-dropdown {
+    @apply min-w-[3rem]; // Touch target
+  }
+}
+```
+
 ### **Messaggi di Sistema**
 ```html
 <!-- Successo -->
@@ -215,7 +270,64 @@ yellow-500   #eab308  // Warning
 
 ---
 
-## 📐 Layout e Spacing
+## � Mobile-First Design Strategy
+
+### **📋 Principio Fondamentale**
+BudgetWise è **primariamente una mobile app**. Tutti i componenti devono essere progettati per dispositivi mobili e poi scalare verso desktop.
+
+### **📏 Breakpoint Strategici**
+```scss
+// Tailwind CSS breakpoints (mobile-first)
+sm:   640px   // Piccoli tablet portrait
+md:   768px   // Tablet landscape / Desktop piccoli
+lg:   1024px  // Desktop standard
+xl:   1280px  // Desktop grandi
+2xl:  1536px  // Desktop molto grandi
+```
+
+### **👆 Touch-First Interaction**
+```scss
+// Target sizes minimi (44px = 2.75rem)
+.touch-target {
+  @apply min-h-[2.75rem] min-w-[2.75rem] 
+         flex items-center justify-center
+         touch-manipulation; // Migliora performance touch
+}
+
+// Spacing generoso per touch
+.mobile-form {
+  @apply space-y-6; // Almeno 1.5rem tra elementi
+}
+```
+
+### **📱 Mobile-First Component Pattern**
+```html
+<!-- Base mobile + progressive enhancement -->
+<button class="
+  w-full p-4 text-lg                    <!-- Mobile: full width, grande -->
+  md:w-auto md:px-6 md:py-3 md:text-base <!-- Desktop: auto width, normale -->
+  rounded-lg bg-primary-500 text-white
+  active:scale-95 transform transition-transform
+">
+  Conferma
+</button>
+```
+
+### **🎛️ Navigation Mobile-First**
+```html
+<!-- Mobile: Bottom navigation -->
+<nav class="
+  fixed bottom-0 left-0 right-0 
+  md:static md:flex md:justify-center
+  bg-white border-t border-slate-200
+">
+  <!-- Tab navigation per mobile -->
+</nav>
+```
+
+---
+
+## �📐 Layout e Spacing
 
 ### **Sistema di Spaziature**
 ```scss

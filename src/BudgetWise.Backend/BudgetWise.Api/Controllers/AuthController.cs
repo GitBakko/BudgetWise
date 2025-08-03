@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using BudgetWise.Data.Entities;
+using BudgetWise.Data.Models;
 using BudgetWise.Core.Interfaces;
 using BudgetWise.Core.DTOs;
 

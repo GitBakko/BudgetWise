@@ -26,10 +26,121 @@ This document establishes the **MANDATORY** development patterns for BudgetWise.
 - ✅ **Async/Await + Promises** for ALL HTTP operations
 - ✅ **Computed Signals** for derived state
 - ✅ **Direct signal calls** in templates
+- 📱 **MOBILE-FIRST** design for all components
 
 ---
 
-## 📋 **MANDATORY Service Pattern**
+## � **CRITICAL: API Configuration Pattern**
+
+### **🚨 NEVER USE ANGULAR PROXY CONFIGURATION**
+
+**❌ PROHIBITED:**
+- Angular proxy configuration (`proxy.conf.json`)
+- Hardcoded API URLs in services
+- Direct environment variables for API endpoints
+
+**✅ MANDATORY APPROACH: `app-config.json`**
+
+All API endpoints **MUST** be configured through the `app-config.json` file and accessed via `ConfigService`.
+
+### **1. Configuration File Structure**
+
+```json
+// src/assets/config/app-config.json
+{
+  "apiUrl": "https://localhost:7268",
+  "environment": "development",
+  "features": {
+    "enableLogging": true,
+    "enableAnalytics": false,
+    "enableDebugMode": true
+  },
+  "auth": {
+    "tokenStorageKey": "budgetwise_token",
+    "refreshTokenStorageKey": "budgetwise_refresh_token",
+    "tokenExpirationBuffer": 300
+  },
+  "ui": {
+    "theme": "light",
+    "language": "it-IT",
+    "dateFormat": "dd/MM/yyyy"
+  }
+}
+```
+
+### **2. Service Implementation Pattern**
+
+**✅ CORRECT Pattern (like `AuthService`):**
+
+```typescript
+import { Injectable, inject, signal, computed } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { lastValueFrom } from 'rxjs';
+import { ConfigService } from './config.service';
+
+@Injectable({ providedIn: 'root' })
+export class FeatureService {
+  private http = inject(HttpClient);
+  private configService = inject(ConfigService);
+  
+  // ✅ RULE: Private method to build API URLs
+  private getFeatureApiUrl(): string {
+    return `${this.configService.getApiUrl()}/api/feature`;
+  }
+  
+  // ✅ RULE: Use configService.getApiUrl() for all HTTP calls
+  async loadDataAsync(): Promise<DataType[]> {
+    try {
+      const result = await lastValueFrom(
+        this.http.get<DataType[]>(this.getFeatureApiUrl())
+      );
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
+  
+  async createItemAsync(item: CreateRequest): Promise<DataType> {
+    try {
+      const created = await lastValueFrom(
+        this.http.post<DataType>(this.getFeatureApiUrl(), item)
+      );
+      return created;
+    } catch (error) {
+      throw error;
+    }
+  }
+}
+```
+
+### **3. Why This Pattern is Mandatory**
+
+- **🎯 Environment Flexibility**: Different API URLs for dev/staging/prod
+- **🔒 Security**: No hardcoded endpoints in source code
+- **🚀 Performance**: Single configuration load at app startup
+- **📱 Mobile-First**: Works seamlessly offline/online scenarios
+- **🔄 Consistency**: Same pattern as existing `AuthService`
+
+### **4. Configuration Loading**
+
+The configuration is automatically loaded via `APP_INITIALIZER` in `app.config.ts`:
+
+```typescript
+{
+  provide: APP_INITIALIZER,
+  useFactory: initializeApp,
+  deps: [ConfigService, AuthService],
+  multi: true
+}
+```
+
+**Configuration is loaded BEFORE any component is initialized.**
+
+**📋 For complete reference**: See `API-CONFIGURATION-PATTERN.md`
+
+---
+
+## �📋 **MANDATORY Service Pattern**
 
 ### **Template: Every Service Must Follow This**
 
@@ -40,31 +151,38 @@ import { lastValueFrom } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class [FeatureName]Service {
-  // ✅ RULE 1: ALL state as private signals
+  // ✅ RULE 1: Inject ConfigService for API endpoints
+  private http = inject(HttpClient);
+  private configService = inject(ConfigService);
+  
+  // ✅ RULE 2: ALL state as private signals
   private dataSignal = signal<DataType[]>([]);
   private loadingSignal = signal<boolean>(false);
   private errorSignal = signal<string | null>(null);
   
-  // ✅ RULE 2: Public readonly signals only
+  // ✅ RULE 3: Public readonly signals only
   public readonly data = this.dataSignal.asReadonly();
   public readonly loading = this.loadingSignal.asReadonly();
   public readonly error = this.errorSignal.asReadonly();
   
-  // ✅ RULE 3: Computed signals for derived state
+  // ✅ RULE 4: Computed signals for derived state
   public readonly hasData = computed(() => this.data().length > 0);
   public readonly isEmpty = computed(() => !this.loading() && this.data().length === 0);
   
-  constructor(private http: HttpClient) {}
+  // ✅ RULE 5: Private method for API URL construction
+  private getApiUrl(): string {
+    return `${this.configService.getApiUrl()}/api/[feature]`;
+  }
   
-  // ✅ RULE 4: ALL HTTP methods are async/await
+  // ✅ RULE 6: ALL HTTP methods are async/await
   async loadDataAsync(): Promise<DataType[]> {
     this.loadingSignal.set(true);
     this.errorSignal.set(null);
     
     try {
-      // ✅ RULE 5: Use lastValueFrom for HTTP to Promise conversion
+      // ✅ RULE 7: Use lastValueFrom + ConfigService for HTTP calls
       const result = await lastValueFrom(
-        this.http.get<DataType[]>('/api/endpoint')
+        this.http.get<DataType[]>(this.getApiUrl())
       );
       
       this.dataSignal.set(result);
@@ -84,10 +202,10 @@ export class [FeatureName]Service {
     
     try {
       const created = await lastValueFrom(
-        this.http.post<DataType>('/api/endpoint', item)
+        this.http.post<DataType>(this.getApiUrl(), item)
       );
       
-      // ✅ RULE 6: Update signals immutably
+      // ✅ RULE 8: Update signals immutably
       this.dataSignal.update(current => [...current, created]);
       return created;
     } catch (error: any) {
@@ -435,6 +553,112 @@ async loadUsersAsync(): Promise<User[]> {
   this.usersSignal.set(users);
   return users;
 }
+```
+
+---
+
+## 📱 **MANDATORY Mobile-First Development Rules**
+
+### **🎯 Core Mobile Principles**
+
+**EVERY COMPONENT MUST:**
+- ✅ Start with mobile design (320px viewport)
+- ✅ Use touch-friendly sizes (min 44px targets)
+- ✅ Progressive enhancement to desktop
+- ✅ Test on actual mobile devices
+
+### **📐 Required Responsive Patterns**
+
+```typescript
+// ✅ MANDATORY: Mobile-first Tailwind classes
+<button class="
+  w-full p-4 text-lg                    // Mobile: full width, touch-friendly
+  md:w-auto md:px-6 md:py-3 md:text-base // Desktop: compact
+  min-h-[2.75rem]                       // Always touch-friendly
+  rounded-lg bg-primary-500 text-white
+">
+```
+
+### **🎛️ Navigation Rules**
+
+```html
+<!-- ✅ MANDATORY: Mobile navigation pattern -->
+<!-- Mobile: Bottom tab bar -->
+<nav class="
+  fixed bottom-0 left-0 right-0 z-50
+  md:static md:flex md:justify-center
+  bg-white border-t border-slate-200
+  safe-area-padding-bottom
+">
+  <!-- Tab items with minimum 44px touch targets -->
+</nav>
+```
+
+### **📋 Form Rules Mobile-First**
+
+```typescript
+// ✅ MANDATORY: Mobile-optimized form layout
+<div class="
+  space-y-6                             // Mobile: generous spacing
+  md:space-y-4                         // Desktop: compact
+  p-4 md:p-6                          // Progressive spacing
+">
+  <input class="
+    w-full p-4 text-lg                 // Mobile: large, easy to tap
+    md:p-3 md:text-base               // Desktop: standard
+    rounded-lg border-2               // Clear borders for touch
+    focus:border-primary-500          // Visual feedback
+  ">
+</div>
+```
+
+### **🚫 Mobile-First Forbidden Patterns**
+
+```html
+<!-- ❌ FORBIDDEN: Desktop-first responsive design -->
+<div class="hidden md:block lg:flex">
+
+<!-- ❌ FORBIDDEN: Small touch targets -->
+<button class="p-1 text-xs">
+
+<!-- ❌ FORBIDDEN: Hover-only interactions -->
+<div class="hover:bg-blue-500">
+
+<!-- ❌ FORBIDDEN: Complex nested navigation -->
+<nav class="dropdown-menu">
+```
+
+### **✅ Mobile-First Checklist**
+
+**Before merging ANY component:**
+- [ ] **Tested on 320px viewport** (iPhone SE)
+- [ ] **Touch targets minimum 44px** (2.75rem)
+- [ ] **Text readable without zoom** (16px+ base)
+- [ ] **Forms usable with thumbs** (large inputs)
+- [ ] **Navigation works on mobile** (bottom bar/hamburger)
+- [ ] **Progressive enhancement** works (mobile → desktop)
+- [ ] **Performance optimized** (mobile network)
+- [ ] **Uses p-select instead of p-dropdown** (correct component)
+
+### **⚠️ CRITICAL COMPONENT RULES**
+
+**🚫 FORBIDDEN: p-dropdown**
+```typescript
+// ❌ NEVER USE - p-dropdown is obsolete
+import { DropdownModule } from 'primeng/dropdown';
+<p-dropdown>
+```
+
+**✅ REQUIRED: p-select**
+```typescript
+// ✅ ALWAYS USE - p-select is the correct component
+import { SelectModule } from 'primeng/select';
+
+// ✅ Always make it editable
+<p-select 
+  [editable]="true"
+  [filter]="true"
+  [showClear]="true">
 ```
 
 ---

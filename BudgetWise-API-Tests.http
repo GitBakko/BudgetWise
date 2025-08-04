@@ -1,0 +1,73 @@
+### BudgetW### Test 2: Ricerca Brand Brandfetch
+GET {{baseUrl}}/api/brands/brandfetch/search?name=apple
+Accept: application/json
+
+###
+
+### Test 3: Dettagli Brand
+POST {{baseUrl}}/api/brands/brandfetch/details
+Content-Type: application/json
+Accept: application/json
+
+{
+  "brandId": "apple.com"
+}ollection
+### Test delle API per gestione brand e icone
+
+@baseUrl = https://localhost:7268
+
+### Test 1: Ricerca Brand
+GET {{baseUrl}}/api/brands/search?query=google
+Accept: application/json
+
+###
+
+### Test 2: Ricerca Brand (Brandfetch)
+GET {{baseUrl}}/api/brands/search?query=microsoft
+Accept: application/json
+
+###
+
+### Test 3: Dettagli Brand
+POST {{baseUrl}}/api/brands/brandfetch/details
+Content-Type: application/json
+Accept: application/json
+
+{
+  "brandId": "google.com"
+}
+
+###
+
+### Test 4: Generazione Icona AI
+POST {{baseUrl}}/api/icons/generate
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "MyBrand",
+  "style": "modern",
+  "size": 256
+}
+
+###
+
+### Test 5: Salvataggio Brand Locale
+POST {{baseUrl}}/api/brands/save
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "Test Brand",
+  "logoUrl": "https://example.com/logo.png",
+  "color": "#3B82F6",
+  "description": "Brand di test"
+}
+
+###
+
+### Test 6: Verifica Stato Server
+GET {{baseUrl}}/scalar/v1
+Accept: text/html
+
+###

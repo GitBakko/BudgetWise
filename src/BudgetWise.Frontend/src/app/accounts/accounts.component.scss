@@ -2,12 +2,13 @@
 
 // ✅ Touch-friendly interaction improvements
 .touch-target {
-  @apply min-h-[2.75rem] touch-manipulation;
+  min-height: 2.75rem;
+  touch-action: manipulation;
 }
 
 // 📱 Mobile-optimized card hover effects
 .group:hover .group-hover\:shadow-lg {
-  @apply shadow-lg;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
 // 📱 Responsive summary cards
@@ -17,6 +18,105 @@
   
   &::-webkit-scrollbar {
     display: none;
+  }
+}
+
+// 🎨 NEW: Brand carousel styling
+::ng-deep .brand-carousel {
+  .p-carousel-content {
+    overflow: hidden;
+  }
+  
+  .p-carousel-container {
+    margin: 0 8px;
+  }
+  
+  .p-carousel-prev,
+  .p-carousel-next {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: white;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    transition: all 0.2s;
+    
+    &:hover {
+      background: #f0f9ff;
+      border-color: #bfdbfe;
+      color: #0066cc;
+    }
+  }
+}
+
+// 🎨 NEW: Icon management styles
+.icon-preview {
+  transition: all 0.3s;
+  
+  &:hover {
+    transform: scale(1.05);
+  }
+}
+
+.color-swatch {
+  transition: all 0.2s;
+  
+  &:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+  
+  &.selected {
+    box-shadow: 0 0 0 2px #0066cc, 0 0 0 4px rgba(0, 102, 204, 0.2);
+  }
+}
+
+// 🎨 NEW: AI generation button
+.ai-generate-btn {
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to right, #a855f7, #ec4899);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  
+  &:hover::before {
+    opacity: 0.1;
+  }
+}
+
+// 📱 Mobile-first dialog adjustments
+::ng-deep {
+  .p-dialog {
+    width: 100%;
+    max-width: 32rem;
+    margin: 1rem;
+    
+    @media (min-width: 768px) {
+      margin: auto;
+    }
+  }
+  
+  .p-dialog-content {
+    padding: 1rem;
+    
+    @media (min-width: 768px) {
+      padding: 1.5rem;
+    }
+  }
+  
+  .p-button-lg {
+    padding: 1rem 1.5rem;
+    font-size: 1.125rem;
   }
 }
 

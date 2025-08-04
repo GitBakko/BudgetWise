@@ -216,6 +216,15 @@ Tutte le operazioni sono tracciate tramite Serilog con structured logging.
 // Repository Pattern: Register repositories and services
 builder.Services.AddScoped<BudgetWise.Data.Interfaces.IAccountRepository, BudgetWise.Data.Repositories.AccountRepository>();
 builder.Services.AddScoped<BudgetWise.Core.Interfaces.IAccountService, BudgetWise.Core.Services.AccountService>();
+builder.Services.AddScoped<BudgetWise.Core.Interfaces.IAuthService, BudgetWise.Core.Services.AuthService>();
+
+// Brand and Icon Management Services
+builder.Services.AddScoped<BudgetWise.Data.Interfaces.IBrandRepository, BudgetWise.Data.Repositories.BrandRepository>();
+builder.Services.AddScoped<BudgetWise.Core.Interfaces.IBrandService, BudgetWise.Core.Services.BrandService>();
+builder.Services.AddScoped<BudgetWise.Core.Interfaces.IIconGenerationService, BudgetWise.Core.Services.IconGenerationService>();
+
+// HttpClient for external API calls
+builder.Services.AddHttpClient();
 
 var app = builder.Build();
 

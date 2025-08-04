@@ -91,3 +91,67 @@
     }
   }
 }
+
+/* 📱 MOBILE SCROLL ENHANCEMENTS */
+@layer utilities {
+  /* Hide scrollbar while keeping scroll functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* Internet Explorer 10+ */
+    scrollbar-width: none;     /* Firefox */
+    scroll-behavior: smooth;   /* Smooth scrolling */
+    
+    &::-webkit-scrollbar {
+      display: none;           /* Safari and Chrome */
+    }
+  }
+  
+  /* Enhanced touch scrolling for mobile */
+  .scroll-touch {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+  
+  /* Touch-friendly targets */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* 🎨 LOGO SUGGESTIONS ENHANCEMENTS */
+@layer components {
+  /* Consistent brand card dimensions */
+  .brand-card {
+    width: 96px;           /* w-24 equivalent */
+    min-height: 100px;     /* Consistent height */
+    padding: 12px;         /* p-3 equivalent */
+    
+    /* Smooth transitions */
+    transition: all 0.2s ease-in-out;
+    
+    /* Touch-friendly */
+    touch-action: manipulation;
+    
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    }
+    
+    &:active {
+      transform: translateY(0);
+    }
+  }
+  
+  /* Logo container consistency */
+  .brand-logo-container {
+    width: 48px;
+    height: 48px;
+    background: white;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    margin-bottom: 8px;
+  }
+}

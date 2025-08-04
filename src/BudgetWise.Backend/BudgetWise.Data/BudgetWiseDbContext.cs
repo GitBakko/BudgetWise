@@ -36,6 +36,8 @@ public partial class BudgetWiseDbContext : DbContext
 
     public virtual DbSet<Brand> Brands { get; set; }
 
+    public virtual DbSet<SmartBrand> SmartBrands { get; set; }
+
     public virtual DbSet<Budget> Budgets { get; set; }
 
     public virtual DbSet<Category> Categories { get; set; }

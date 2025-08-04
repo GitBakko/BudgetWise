@@ -212,6 +212,7 @@
 <p-dialog 
   [visible]="showForm()" 
   (onHide)="onCancel()"
+  (visibleChange)="onDialogVisibilityChange($event)"
   [header]="formTitle()"
   [modal]="true"
   [closable]="true"
@@ -283,6 +284,196 @@
       </div>
     </div>
     
+    <!-- 🎨 NEW: Advanced Icon and Color Management -->
+    <div class="space-y-4">
+      <div class="flex items-center justify-between">
+        <label class="block text-sm font-medium text-slate-700">
+          Icona e Colore
+        </label>
+        <button 
+          type="button"
+          (click)="onToggleIconOptions()"
+          class="text-sm text-primary-600 hover:text-primary-700">
+          {{ showIconOptions() ? 'Nascondi opzioni' : 'Personalizza' }}
+        </button>
+      </div>
+
+      <!-- Icon Preview -->
+      <div class="flex items-center gap-4 p-4 bg-slate-50 rounded-lg">
+        <div 
+          class="w-16 h-16 rounded-2xl flex items-center justify-center shadow-sm"
+          [style.background-color]="selectedColor()">
+          <div *ngIf="pendingUploadUri(); else defaultIcon" class="w-12 h-12">
+            <img 
+              [src]="pendingUploadUri()" 
+              [alt]="accountForm.get('name')?.value || 'Account icon'"
+              class="w-full h-full object-contain rounded-lg">
+          </div>
+          <ng-template #defaultIcon>
+            <i class="pi pi-wallet text-white text-2xl"></i>
+          </ng-template>
+        </div>
+        
+        <div class="flex-1">
+          <h4 class="font-medium text-slate-900">
+            {{ accountForm.get('name')?.value || 'Nuovo Conto' }}
+          </h4>
+          <p class="text-sm text-slate-600">
+            {{ pendingUploadUri() ? 'Icona personalizzata' : 'Icona predefinita' }}
+          </p>
+        </div>
+        
+        <button 
+          *ngIf="pendingUploadUri()"
+          type="button"
+          (click)="onClearIcon()"
+          class="text-red-600 hover:text-red-700">
+          <i class="pi pi-times"></i>
+        </button>
+      </div>
+
+      <!-- Advanced Icon Options -->
+      <div *ngIf="showIconOptions()" class="space-y-4 p-4 border border-slate-200 rounded-lg">
+        
+        <!-- Brand Logo Suggestions -->
+        <div *ngIf="brandSuggestions().length > 0">
+          <h5 class="text-sm font-medium text-slate-700 mb-3">Loghi Suggeriti</h5>
+          
+          <!-- 📱 Mobile-First Horizontal Scroll Grid -->
+          <div class="overflow-x-auto scrollbar-hide scroll-touch">
+            <div class="flex gap-3 pb-2" style="width: max-content;">
+              <button 
+                *ngFor="let brand of brandSuggestions()" 
+                type="button"
+                (click)="onSelectBrandLogo(brand)"
+                class="brand-card flex-shrink-0 border border-slate-200 rounded-lg 
+                       hover:border-primary-300 hover:bg-primary-50 
+                       transition-all touch-manipulation
+                       flex flex-col items-center justify-between">
+                
+                <!-- Logo Container - Fixed Size -->
+                <div class="brand-logo-container">
+                  <img 
+                    [src]="iconService.ensureSafeLogo(brand.logoUrl, brand.name)" 
+                    [alt]="brand.name"
+                    class="w-8 h-8 object-contain"
+                    loading="lazy">
+                </div>
+                
+                <!-- Brand Name - Fixed Height -->
+                <div class="flex-grow flex items-center justify-center px-1">
+                  <div class="text-xs text-slate-600 text-center leading-tight">
+                    {{ brand.name }}
+                  </div>
+                </div>
+                
+                <!-- Source Badge - Fixed Position -->
+                <div *ngIf="brand.source === 'brandfetch'" 
+                     class="text-xs text-blue-500 text-center mt-1 leading-tight">
+                  + Colori
+                </div>
+                <div *ngIf="brand.source !== 'brandfetch'" 
+                     class="h-4">
+                  <!-- Spacer for consistent height -->
+                </div>
+                
+              </button>
+            </div>
+          </div>
+          
+          <!-- Scroll Hint -->
+          <div *ngIf="brandSuggestions().length > 3" 
+               class="text-xs text-slate-400 text-center mt-2 flex items-center justify-center gap-1">
+            <i class="pi pi-arrow-left"></i>
+            <span>Scorri per vedere altri loghi</span>
+            <i class="pi pi-arrow-right"></i>
+          </div>
+        </div>
+
+        <!-- AI Generation -->
+        <div>
+          <h5 class="text-sm font-medium text-slate-700 mb-3">Genera con AI</h5>
+          <button 
+            type="button"
+            (click)="onGenerateAIIcon()"
+            [disabled]="!accountForm.get('name')?.value || isGeneratingIcon()"
+            class="w-full p-3 border border-dashed border-slate-300 rounded-lg
+                   hover:border-primary-400 hover:bg-primary-50 transition-all
+                   disabled:opacity-50 disabled:cursor-not-allowed">
+            <div *ngIf="isGeneratingIcon(); else generateButton" class="flex items-center justify-center gap-2">
+              <i class="pi pi-spin pi-spinner text-primary-600"></i>
+              <span class="text-sm text-primary-600">Generazione in corso...</span>
+            </div>
+            <ng-template #generateButton>
+              <div class="flex items-center justify-center gap-2">
+                <i class="pi pi-sparkle text-purple-600"></i>
+                <span class="text-sm text-slate-700">Genera icona con AI</span>
+              </div>
+            </ng-template>
+          </button>
+        </div>
+
+        <!-- Manual Upload -->
+        <div>
+          <h5 class="text-sm font-medium text-slate-700 mb-3">Carica Immagine</h5>
+          <p-fileUpload 
+            mode="basic" 
+            chooseLabel="Scegli file"
+            accept="image/*"
+            [maxFileSize]="1000000"
+            (onSelect)="onFileUpload($event)"
+            styleClass="w-full">
+          </p-fileUpload>
+        </div>
+
+        <!-- Color Picker -->
+        <div>
+          <h5 class="text-sm font-medium text-slate-700 mb-3">Colore</h5>
+          
+          <!-- Suggested Colors -->
+          <div class="grid grid-cols-8 gap-2 mb-3">
+            <button 
+              *ngFor="let color of getSuggestedColors()"
+              type="button"
+              (click)="onColorSelect(color)"
+              class="w-8 h-8 rounded-lg border-2 hover:scale-110 transition-transform"
+              [style.background-color]="color"
+              [class.border-slate-400]="selectedColor() === color"
+              [class.border-slate-200]="selectedColor() !== color">
+            </button>
+          </div>
+          
+          <!-- Custom Color Picker -->
+          <div class="flex items-center gap-2">
+            <p-colorPicker formControlName="color"></p-colorPicker>
+            <span class="text-sm text-slate-600">{{ selectedColor() }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Balance Start Date -->
+    <div>
+      <label class="block text-sm font-medium text-slate-700 mb-2">
+        Data Saldo Iniziale *
+      </label>
+      <p-datepicker 
+        formControlName="balanceStartDate"
+        dateFormat="dd/mm/yy"
+        [showIcon]="true"
+        iconDisplay="input"
+        inputId="balanceStartDate"
+        placeholder="Seleziona data"
+        styleClass="w-full">
+      </p-datepicker>
+      
+      <div *ngIf="isFieldInvalid('balanceStartDate')" 
+           class="text-red-500 text-sm mt-2 flex items-center gap-2">
+        <i class="pi pi-exclamation-circle"></i>
+        {{ getFieldError('balanceStartDate') }}
+      </div>
+    </div>
+    
     <!-- Initial Balance -->
     <div>
       <label class="block text-sm font-medium text-slate-700 mb-2">
@@ -306,6 +497,23 @@
       </div>
     </div>
     
+    <!-- Set as Default -->
+    <div>
+      <div class="flex items-center gap-3">
+        <p-checkbox 
+          formControlName="setAsDefault"
+          inputId="setAsDefault"
+          [binary]="true">
+        </p-checkbox>
+        <label for="setAsDefault" class="text-sm font-medium text-slate-700 cursor-pointer">
+          Imposta come conto principale
+        </label>
+      </div>
+      <p class="text-xs text-slate-500 mt-1 ml-7">
+        Il conto principale sarà mostrato per primo e usato come default nelle transazioni
+      </p>
+    </div>
+    
     <!-- Description (Optional) -->
     <div>
       <label class="block text-sm font-medium text-slate-700 mb-2">
@@ -325,13 +533,13 @@
   
   <!-- 📱 Mobile-Optimized Dialog Actions -->
   <ng-template pTemplate="footer">
-    <div class="flex flex-col-reverse md:flex-row gap-3 md:gap-2 pt-4">
+    <div class="flex flex-row gap-3 pt-4 justify-end">
       
       <!-- Cancel Button -->
       <p-button 
         (onClick)="onCancel()"
         label="Annulla"
-        styleClass="p-button-secondary w-full md:w-auto p-button-lg md:p-button-md"
+        styleClass="p-button-secondary p-button-lg md:p-button-md"
         class="touch-target">
       </p-button>
       
@@ -341,7 +549,7 @@
         [label]="editMode() ? 'Salva Modifiche' : 'Crea Conto'"
         [disabled]="!canSave()"
         [loading]="accountService.loading()"
-        styleClass="p-button-primary w-full md:w-auto p-button-lg md:p-button-md"
+        styleClass="p-button-primary p-button-lg md:p-button-md"
         class="touch-target">
       </p-button>
       
@@ -354,6 +562,7 @@
 <p-dialog 
   [visible]="showDetails()" 
   (onHide)="onBackToList()"
+  (visibleChange)="onDetailsDialogVisibilityChange($event)"
   header="Dettagli Conto"
   [modal]="true"
   [closable]="true"
@@ -417,14 +626,14 @@
   
   <!-- 📱 Details Dialog Actions -->
   <ng-template pTemplate="footer">
-    <div class="flex flex-col md:flex-row gap-3 md:gap-2 pt-4">
+    <div class="flex flex-row gap-3 pt-4 justify-center flex-wrap">
       
       <!-- View Transactions -->
       <p-button 
         (onClick)="onViewTransactions(selectedAccount()!)"
         icon="pi pi-list"
         label="Transazioni"
-        styleClass="p-button-outlined w-full md:w-auto p-button-lg md:p-button-md"
+        styleClass="p-button-outlined p-button-lg md:p-button-md"
         class="touch-target">
       </p-button>
       
@@ -433,7 +642,7 @@
         (onClick)="onEditAccount(selectedAccount()!)"
         icon="pi pi-pencil"
         label="Modifica"
-        styleClass="p-button-secondary w-full md:w-auto p-button-lg md:p-button-md"
+        styleClass="p-button-secondary p-button-lg md:p-button-md"
         class="touch-target">
       </p-button>
       
@@ -442,7 +651,7 @@
         (onClick)="onDeleteAccount(selectedAccount()!)"
         icon="pi pi-trash"
         label="Elimina"
-        styleClass="p-button-danger w-full md:w-auto p-button-lg md:p-button-md"
+        styleClass="p-button-danger p-button-lg md:p-button-md"
         class="touch-target">
       </p-button>
       
